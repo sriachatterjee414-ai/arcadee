@@ -10,6 +10,7 @@ let local = {};
 try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};
 if(!local.chat) local.chat=[];
+if(!local.direct) local.direct=[];
 const sessions=new Map();
 const n=x=>Math.max(0,Math.min(1e7,+x||0));
 const clean=s=>{const o={};Object.keys(s||{}).slice(0,60).forEach(k=>{const v=s[k]||{};o[k]={p:n(v.p),w:n(v.w),pts:n(v.pts),best:n(v.best),lv:Math.min(10,n(v.lv)||1)}});return o};
@@ -37,6 +38,21 @@ async function savePlayer(uid,d){if(durable){const old=(await sb('arcade_users?s
 async function chatGet(){if(!durable)return local.chat.slice(-100);const rows=await sb('arcade_chat?select=id,user_id,text,created_at,username&order=id.desc&limit=100');return rows.reverse().map(x=>({id:x.user_id,name:x.username||'Player',text:x.text,createdAt:x.created_at}))}
 async function chatPost(uid,text){if(durable){const p=(await sb('arcade_users?select=username&id=eq.'+encodeURIComponent(uid)+'&limit=1'))[0];await sb('arcade_chat',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,username:p?.username||'Player',text:text.slice(0,300)})});return}
  local.chat.push({id:uid,name:local[uid]?.name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.chat=local.chat.slice(-100);saveLocal()}
+async function directGet(uid,other){
+ if(uid===other)throw Object.assign(new Error('Choose another player.'),{code:400});
+ if(!durable){if(!local[other])throw Object.assign(new Error('Player not found.'),{code:404});return local.direct.filter(m=>(m.senderId===uid&&m.recipientId===other)||(m.senderId===other&&m.recipientId===uid)).slice(-200).map(m=>({id:m.senderId,senderId:m.senderId,name:m.name,text:m.text,createdAt:m.createdAt}))}
+ const clause=`and(sender_id.eq.${uid},recipient_id.eq.${other}),and(sender_id.eq.${other},recipient_id.eq.${uid})`;
+ const rows=await sb('arcade_direct_messages?select=id,sender_id,recipient_id,sender_name,text,created_at&or='+encodeURIComponent(clause)+'&order=id.asc&limit=200');
+ return rows.map(m=>({id:m.sender_id,senderId:m.sender_id,name:m.sender_name||'Player',text:m.text,createdAt:m.created_at}));
+}
+async function directPost(uid,other,text){
+ if(uid===other)throw Object.assign(new Error('Choose another player.'),{code:400});
+ if(!durable){if(!local[uid]||!local[other])throw Object.assign(new Error('Player not found.'),{code:404});local.direct.push({senderId:uid,recipientId:other,name:local[uid].name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.direct=local.direct.slice(-5000);saveLocal();return}
+ const users=await sb('arcade_users?select=id,username&id=in.('+encodeURIComponent(uid)+','+encodeURIComponent(other)+')');
+ if(!users.some(user=>user.id===uid)||!users.some(user=>user.id===other))throw Object.assign(new Error('Player not found.'),{code:404});
+ const sender=users.find(user=>user.id===uid);
+ await sb('arcade_direct_messages',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({sender_id:uid,recipient_id:other,sender_name:sender.username||'Player',text:text.slice(0,300)})});
+}
 const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp'};
 http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
  try{
@@ -49,6 +65,9 @@ http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x
   const pm=u.pathname.match(/^\/api\/players\/([\w-]{1,80})$/);if(pm&&req.method==='PUT'){const uid=await requireUser(req);if(!uid||uid!==pm[1])return json(res,401,{error:'Please log in again.'});return body(req,async d=>{try{await savePlayer(uid,d);json(res,200,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}})}
   if(u.pathname==='/api/chat'&&req.method==='GET')return json(res,200,{messages:await chatGet()});
   if(u.pathname==='/api/chat'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req),text=String(d.text||'').trim();if(!uid)return json(res,401,{error:'Log in to chat.'});if(!text)return json(res,400,{error:'Message is empty.'});try{await chatPost(uid,text);json(res,201,{ok:true})}catch(e){json(res,500,{error:e.message})}});
+    const dm=u.pathname.match(/^\/api\/direct\/([\w-]{1,80})$/);
+    if(dm&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Log in to chat.'});try{return json(res,200,{messages:await directGet(uid,dm[1])})}catch(e){return json(res,e.code||500,{error:e.message})}}
+    if(dm&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req),text=String(d.text||'').trim();if(!uid)return json(res,401,{error:'Log in to chat.'});if(!text)return json(res,400,{error:'Message is empty.'});try{await directPost(uid,dm[1],text);json(res,201,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}});
   const requested=u.pathname==='/'?'/index.html':decodeURIComponent(u.pathname),f=path.join(PUB,requested);if(!f.startsWith(PUB)){res.writeHead(403);return res.end('Forbidden')}fs.readFile(f,(e,data)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'});res.end(data)})
  }catch(e){json(res,500,{error:'Server error'})}
 }).listen(PORT,()=>console.log(`Arcade Hub running on ${PORT} (${durable?'Supabase durable mode':'local prototype mode'})`));
