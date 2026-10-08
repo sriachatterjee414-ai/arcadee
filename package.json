@@ -1,0 +1,12 @@
+{
+  "name": "arcade-hub",
+  "version": "2.0.0",
+  "description": "Arcade Hub with durable Supabase backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
