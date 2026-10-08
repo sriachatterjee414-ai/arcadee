@@ -11,33 +11,35 @@ try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};
 if(!local.chat) local.chat=[];
 if(!local.direct) local.direct=[];
-const sessions=new Map();
+if(!process.env.SESSION_SECRET&&!SB_KEY&&!local.sessionSecret){local.sessionSecret=crypto.randomBytes(32).toString('base64url');try{fs.writeFileSync(FILE,JSON.stringify(local,null,2))}catch(e){}}
+const SESSION_SECRET=process.env.SESSION_SECRET||SB_KEY||local.sessionSecret;
 const n=x=>Math.max(0,Math.min(1e7,+x||0));
-const clean=s=>{const o={};Object.keys(s||{}).slice(0,60).forEach(k=>{const v=s[k]||{};o[k]={p:n(v.p),w:n(v.w),pts:n(v.pts),best:n(v.best),lv:Math.min(10,n(v.lv)||1)}});return o};
+const clean=s=>{const o={};Object.keys(s||{}).slice(0,60).forEach(k=>{const v=s[k]||{};o[k]={p:n(v.p),w:n(v.w),pts:n(v.pts),best:n(v.best),lv:Math.min(30,n(v.lv)||1)}});return o};
+function mergeStats(current,incoming){const merged=clean(current);for(const [key,value] of Object.entries(clean(incoming))){const old=merged[key]||{p:0,w:0,pts:0,best:0,lv:1};merged[key]={p:Math.max(old.p,value.p),w:Math.max(old.w,value.w),pts:Math.max(old.pts,value.pts),best:Math.max(old.best,value.best),lv:Math.max(old.lv,value.lv)}}return merged}
 const normalizeName=s=>String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
 const validName=s=>/^[A-Za-z0-9 _-]{2,16}$/.test(String(s||'').trim());
 const validPin=s=>/^\d{4,8}$/.test(String(s||''));
 const hashPin=(pin,salt)=>crypto.pbkdf2Sync(String(pin),salt,120000,32,'sha256').toString('hex');
-const token=()=>crypto.randomBytes(32).toString('hex');
 const id=()=> 'u_'+crypto.randomBytes(9).toString('base64url');
+const token=uid=>{const payload=Buffer.from(JSON.stringify({id:uid,exp:Date.now()+365*24*60*60*1000})).toString('base64url');const signature=crypto.createHmac('sha256',SESSION_SECRET).update(payload).digest('base64url');return payload+'.'+signature};
 function json(res,code,data){res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data))}
 function body(req,cb){let b='';req.on('data',c=>{b+=c;if(b.length>150000)req.destroy()});req.on('end',()=>{try{cb(JSON.parse(b||'{}'))}catch(e){json(req.res,400,{error:'Invalid JSON'})}})}
-function saveLocal(){fs.writeFile(FILE,JSON.stringify(local,null,2),()=>{})}
+function saveLocal(){return fs.promises.writeFile(FILE,JSON.stringify(local,null,2))}
 async function sb(pathname,opts={}){const r=await fetch(SB_URL+'/rest/v1/'+pathname,{...opts,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json',...(opts.headers||{})}});const text=await r.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!r.ok)throw new Error((data&&data.message)||text||('Supabase '+r.status));return data}
 async function sbUserByName(name){const q=encodeURIComponent(normalizeName(name));const a=await sb('arcade_users?select=*&username_normalized=eq.'+q+'&limit=1');return a[0]||null}
 async function getPlayers(){if(!durable){return Object.entries(local).filter(([k,v])=>k!=='chat'&&v&&typeof v==='object'&&!Array.isArray(v)).map(([id,v])=>({id,data:{stats:v.stats||{},following:v.following||[],name:v.name||''}}))}
  const users=await sb('arcade_users?select=id,username,stats,following&order=username.asc');return users.map(u=>({id:u.id,data:{stats:u.stats||{},following:Array.isArray(u.following)?u.following:[],name:u.username||''}}))}
-function sessionId(req){const h=req.headers.authorization||'';const t=h.startsWith('Bearer ')?h.slice(7):'';return sessions.get(t)||null}
+function sessionId(req){const h=req.headers.authorization||'';const t=h.startsWith('Bearer ')?h.slice(7):'',parts=t.split('.');if(parts.length!==2)return null;const expected=crypto.createHmac('sha256',SESSION_SECRET).update(parts[0]).digest(),actual=Buffer.from(parts[1],'base64url');if(actual.length!==expected.length||!crypto.timingSafeEqual(actual,expected))return null;try{const payload=JSON.parse(Buffer.from(parts[0],'base64url').toString());return payload.id&&payload.exp>Date.now()?payload.id:null}catch(e){return null}}
 async function requireUser(req){return sessionId(req)}
 async function register(name,pin){if(durable){if(await sbUserByName(name))throw Object.assign(new Error('That username is already taken.'),{code:409});const salt=crypto.randomBytes(16).toString('hex');const uid=id();await sb('arcade_users',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid,username:name,username_normalized:normalizeName(name),pin_salt:salt,pin_hash:hashPin(pin,salt),stats:{},following:[]})});return {id:uid,name}}
- if(Object.values(local).some(v=>v&&v.name&&normalizeName(v.name)===normalizeName(name)))throw Object.assign(new Error('That username is already taken.'),{code:409});const uid=id(),salt=crypto.randomBytes(16).toString('hex');local[uid]={name,stats:{},following:[],auth:{salt,pin:hashPin(pin,salt)}};saveLocal();return{id:uid,name}}
+ if(Object.values(local).some(v=>v&&v.name&&normalizeName(v.name)===normalizeName(name)))throw Object.assign(new Error('That username is already taken.'),{code:409});const uid=id(),salt=crypto.randomBytes(16).toString('hex');local[uid]={name,stats:{},following:[],auth:{salt,pin:hashPin(pin,salt)}};await saveLocal();return{id:uid,name}}
 async function login(name,pin){if(durable){const p=await sbUserByName(name);if(!p)throw new Error('Username or PIN is incorrect.');const expected=hashPin(pin,p.pin_salt);if(expected!==p.pin_hash)throw new Error('Username or PIN is incorrect.');return{id:p.id,name:p.username}}
  for(const [uid,p] of Object.entries(local)){if(p&&p.name&&normalizeName(p.name)===normalizeName(name)){if(p.auth&&hashPin(pin,p.auth.salt)===p.auth.pin)return{id:uid,name:p.name}}}throw new Error('Username or PIN is incorrect.')}
-async function savePlayer(uid,d){if(durable){const old=(await sb('arcade_users?select=following,username&id=eq.'+encodeURIComponent(uid)+'&limit=1'))[0];if(!old)throw Object.assign(new Error('Account not found.'),{code:404});await sb('arcade_users?id=eq.'+encodeURIComponent(uid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({stats:clean(d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String),updated_at:new Date().toISOString()})});return}
- if(!local[uid])throw Object.assign(new Error('Account not found.'),{code:404});local[uid]={...local[uid],stats:clean(d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String)};saveLocal()}
+async function savePlayer(uid,d){if(durable){const old=(await sb('arcade_users?select=following,username,stats&id=eq.'+encodeURIComponent(uid)+'&limit=1'))[0];if(!old)throw Object.assign(new Error('Account not found.'),{code:404});await sb('arcade_users?id=eq.'+encodeURIComponent(uid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({stats:mergeStats(old.stats,d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String),updated_at:new Date().toISOString()})});return}
+ if(!local[uid])throw Object.assign(new Error('Account not found.'),{code:404});local[uid]={...local[uid],stats:mergeStats(local[uid].stats,d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String)};await saveLocal()}
 async function chatGet(){if(!durable)return local.chat.slice(-100);const rows=await sb('arcade_chat?select=id,user_id,text,created_at,username&order=id.desc&limit=100');return rows.reverse().map(x=>({id:x.user_id,name:x.username||'Player',text:x.text,createdAt:x.created_at}))}
 async function chatPost(uid,text){if(durable){const p=(await sb('arcade_users?select=username&id=eq.'+encodeURIComponent(uid)+'&limit=1'))[0];await sb('arcade_chat',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,username:p?.username||'Player',text:text.slice(0,300)})});return}
- local.chat.push({id:uid,name:local[uid]?.name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.chat=local.chat.slice(-100);saveLocal()}
+ local.chat.push({id:uid,name:local[uid]?.name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.chat=local.chat.slice(-100);await saveLocal()}
 async function directGet(uid,other){
  if(uid===other)throw Object.assign(new Error('Choose another player.'),{code:400});
  if(!durable){if(!local[other])throw Object.assign(new Error('Player not found.'),{code:404});return local.direct.filter(m=>(m.senderId===uid&&m.recipientId===other)||(m.senderId===other&&m.recipientId===uid)).slice(-200).map(m=>({id:m.senderId,senderId:m.senderId,name:m.name,text:m.text,createdAt:m.createdAt}))}
@@ -47,7 +49,7 @@ async function directGet(uid,other){
 }
 async function directPost(uid,other,text){
  if(uid===other)throw Object.assign(new Error('Choose another player.'),{code:400});
- if(!durable){if(!local[uid]||!local[other])throw Object.assign(new Error('Player not found.'),{code:404});local.direct.push({senderId:uid,recipientId:other,name:local[uid].name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.direct=local.direct.slice(-5000);saveLocal();return}
+ if(!durable){if(!local[uid]||!local[other])throw Object.assign(new Error('Player not found.'),{code:404});local.direct.push({senderId:uid,recipientId:other,name:local[uid].name||'Player',text:text.slice(0,300),createdAt:new Date().toISOString()});local.direct=local.direct.slice(-5000);await saveLocal();return}
  const users=await sb('arcade_users?select=id,username&id=in.('+encodeURIComponent(uid)+','+encodeURIComponent(other)+')');
  if(!users.some(user=>user.id===uid)||!users.some(user=>user.id===other))throw Object.assign(new Error('Player not found.'),{code:404});
  const sender=users.find(user=>user.id===uid);
@@ -58,8 +60,8 @@ http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x
  try{
   if(u.pathname==='/api/status'&&req.method==='GET')return json(res,200,{ok:true,durable,provider:durable?'supabase':'local'});
   if(u.pathname==='/api/players'&&req.method==='GET')return json(res,200,await getPlayers());
-  if(u.pathname==='/api/register'&&req.method==='POST')return body(req,async d=>{try{const name=String(d.name||'').trim().replace(/\s+/g,' '),pin=String(d.pin||'');if(!validName(name))return json(res,400,{error:'Username must be 2-16 characters and use letters, numbers, spaces, _ or -.'});if(!validPin(pin))return json(res,400,{error:'PIN must be 4-8 digits.'});const v=await register(name,pin),t=token();sessions.set(t,v.id);json(res,201,{ok:true,...v,token:t})}catch(e){json(res,e.code||500,{error:e.message||'Could not create account.'})}});
-  if(u.pathname==='/api/login'&&req.method==='POST')return body(req,async d=>{try{const v=await login(String(d.name||'').trim(),String(d.pin||'')),t=token();sessions.set(t,v.id);json(res,200,{ok:true,...v,token:t})}catch(e){json(res,e.code||401,{error:e.message})}});
+  if(u.pathname==='/api/register'&&req.method==='POST')return body(req,async d=>{try{const name=String(d.name||'').trim().replace(/\s+/g,' '),pin=String(d.pin||'');if(!validName(name))return json(res,400,{error:'Username must be 2-16 characters and use letters, numbers, spaces, _ or -.'});if(!validPin(pin))return json(res,400,{error:'PIN must be 4-8 digits.'});const v=await register(name,pin);json(res,201,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||500,{error:e.message||'Could not create account.'})}});
+  if(u.pathname==='/api/login'&&req.method==='POST')return body(req,async d=>{try{const v=await login(String(d.name||'').trim(),String(d.pin||''));json(res,200,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||401,{error:e.message})}});
   if(u.pathname==='/api/session'&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Not logged in.'});const p=(await getPlayers()).find(x=>x.id===uid);if(!p)return json(res,401,{error:'Not logged in.'});return json(res,200,{ok:true,id:uid,name:p.data.name})}
   if(u.pathname==='/api/players/me'&&req.method==='PUT'){const uid=await requireUser(req);if(!uid)return json(res,401,{error:'Please log in again.'});return body(req,async d=>{try{await savePlayer(uid,d);json(res,200,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}})}
   const pm=u.pathname.match(/^\/api\/players\/([\w-]{1,80})$/);if(pm&&req.method==='PUT'){const uid=await requireUser(req);if(!uid||uid!==pm[1])return json(res,401,{error:'Please log in again.'});return body(req,async d=>{try{await savePlayer(uid,d);json(res,200,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}})}
