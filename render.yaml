@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: arcade-hub
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/status
