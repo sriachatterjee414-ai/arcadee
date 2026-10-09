@@ -217,6 +217,20 @@ main{max-width:1280px;padding:26px 34px 108px}.app h1,.app h1:first-letter,.app 
 .strip-photo[data-filter="fog"]::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.38),rgba(255,255,255,.08) 62%,transparent 100%)}
 @media(max-width:600px){.online-form>*{flex:1}.challenge-grid,.shop-grid,.badge-grid{grid-template-columns:1fr}}
 </style>
+<style>
+/* Photo booth: vintage look, portrait frame, draggable stickers */
+.booth-viewer{aspect-ratio:3/4!important;max-width:380px;margin-inline:auto}
+.live-sticker{left:calc(var(--sx,50)*1%)!important;top:calc(var(--sy,72)*1%)!important;right:auto!important;transform:translate(-50%,-50%)!important;width:min(34%,130px)!important;pointer-events:auto!important;touch-action:none;cursor:grab;z-index:3}
+.live-sticker:empty{pointer-events:none}
+.live-sticker:has(.live-writing){width:80%!important}
+.strip-photo{position:relative}
+.strip-photo .strip-sticker{position:absolute!important;left:calc(var(--sx,50)*1%)!important;top:calc(var(--sy,72)*1%)!important;transform:translate(-50%,-50%)!important;width:34%;z-index:2;display:block}
+.strip-photo .strip-sticker:has(.photo-writing){width:80%}
+.strip-photo .strip-sticker svg{width:100%!important;height:auto}
+.strip-photo .strip-emoji{display:none!important}
+.booth-viewer[data-filter="vintage"]::after,.booth-viewer[data-filter="film"]::after,.strip-photo[data-filter="vintage"]::after,.strip-photo[data-filter="film"]::after,.grainy[data-filter="vintage"]::after,.grainy[data-filter="film"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 55%,rgba(40,25,10,.45) 100%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .2 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:multiply;opacity:.6}
+.strip-photo[data-filter="vintage"],.strip-photo[data-filter="film"]{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+</style>
 </head>
 <body>
 <div class="app">
@@ -265,7 +279,13 @@ const GAMES=[
 {id:'race',n:'Turbo Racer',e:'🏎️',a:'',t:'Skill',d:'Dodge traffic and grab coins',h:'Drag to steer. Reach the finish without crashing. Higher levels are faster with more traffic.'},
 {id:'cook',n:'Burger Chef',e:'🍔',a:'',t:'Cooking',d:'Build orders before time runs out',h:'Read the order, build the dish, ring the bell. Burgers, hot dogs, sandwiches, pizza and tacos unlock as you level up. Impatient and VIP customers wait less.'},
 {id:'ludo',n:'Ludo',e:'🎲',a:'',t:'Strategy',d:'Race your tokens around the board and home',h:'Classic board for 2-4 players, versus bots or friends on one phone. Roll a 6 to leave base, capture rivals, get all 4 tokens to the centre.'},
-{id:'chess',n:'Chess',e:'♟️',a:'',t:'Strategy',d:'Checkmate the CPU',h:'Standard 8x8 board. Play the bot or a friend on one phone. Castling and en passant are left out; pawns promote to queens.'}];
+{id:'chess',n:'Chess',e:'♟️',a:'',t:'Strategy',d:'Checkmate the CPU',h:'Standard 8x8 board. Play the bot or a friend on one phone. Castling and en passant are left out; pawns promote to queens.'},
+{id:'mines',n:'Minesweeper',e:'💣',a:'💣🚩',t:'Puzzle',d:'Clear the field without hitting a mine',h:'Numbers show how many mines touch a square. Switch to flag mode to mark mines. Your first tap is always safe.'},
+{id:'c4',n:'Connect Four',e:'🔴',a:'🔴🟡',t:'Strategy',d:'Line up four discs before the CPU does',h:'Tap a column to drop a disc. Four in a row wins. Higher levels make the CPU smarter.'},
+{id:'hangman',n:'Hangman',e:'🔤',a:'🔤🪢',t:'Word',d:'Guess the word before the drawing is finished',h:'Tap letters to guess. You have 7 misses. Longer words appear at higher levels.'},
+{id:'hilo',n:'Higher or Lower',e:'🃏',a:'🃏⬆️⬇️',t:'Luck',d:'Guess if the next card is higher or lower',h:'Get enough correct guesses before your lives run out. Same card is a free pass. Aces are low.'},
+{id:'stroop',n:'Color Clash',e:'🎨',a:'🎨🧠',t:'Brain',d:'Tap the colour of the ink, not the word',h:'The word may say one colour while the ink is another. Tap the ink colour before the bar runs out.'}
+];
 const SOON=[];
 const BG={snake:'#7fd6a0',tiles:'#ffd36e',ttt:'#8fc5ff',rps:'#ff9aa8',mem:'#c3a3ff',react:'#ffe45e',guess:'#ffb36b',math:'#7de0e0',bird:'#8fd3ff',g2048:'#ffc48a',word:'#a6e07d',m3:'#ff8fc0',jenga:'#f1c89a',ludo:'#ffd1d1',chess:'#cdbfff'};
 const PIC={
@@ -358,7 +378,7 @@ function renderSide(){
   $('#side').querySelectorAll('.sb').forEach(b=>b.onclick=()=>{tab=b.dataset.t;playing=null;sel=null;render()});
 }
 function render(){
-  if(tab!=='online'&&roomPoll){clearInterval(roomPoll);roomPoll=null}
+  if(tab!=='online'){stopBooth();if(roomPoll){clearInterval(roomPoll);roomPoll=null}}
   document.body.classList.toggle('pl',!!playing);
   renderStats();renderSide();
   $('#bk').style.visibility=(tab==='play'&&!playing&&!sel)?'hidden':'visible';
@@ -435,10 +455,131 @@ function renderFollow(){
   $('#view').innerHTML=`<div class="social-grid"><div class="card feature-card"><div class="top"><b>People</b><span>${Object.keys(a).length} accounts</span></div>${rows.slice(0,50).map((r,i)=>`<div class="profile-row" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="avatar">${esc((nm(r.id)[0]||'P').toUpperCase())}</span><div style="flex:1"><b>${esc(nm(r.id))}</b><div style="font-size:12px;color:var(--mute)">${r.f} followers · ${r.w} wins</div></div>${r.id===myId?'You':`<button class="btn sm ${me.following.includes(r.id)?'ghost':''}" data-f="${r.id}">${me.following.includes(r.id)?'Following':'Follow'}</button>`}</div>`).join('')}</div><div class="card feature-card"><b>Your following</b><p style="color:var(--mute)">${me.following.length} people</p><div class="empty-art">Follow players from the list to build your arcade circle.</div></div></div>`;
   $('#view').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>toggleFollow(b.dataset.f));
 }
+/* ---- Photo Booth shared helpers + Multiplayer Photo Booth ---- */
+const BOOTH_NEW_STICKERS=[
+ {id:'lollipop',label:'Lollipop',emoji:'🍭',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 62L38 114" stroke="#f3e9d8" stroke-width="8" stroke-linecap="round"/><circle cx="62" cy="44" r="34" fill="#ff5f9e"/><path d="M62 44a4 4 0 1 1 4 4a10 10 0 1 1-10-10a16 16 0 1 1 16 16a22 22 0 1 1-22-22a28 28 0 1 1 28 28" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>'},
+ {id:'cherry',label:'Cherry',emoji:'🍒',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M42 82Q50 30 82 14M82 86Q84 44 82 14" stroke="#3d8b4d" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="40" cy="88" r="22" fill="#d6194b"/><circle cx="82" cy="90" r="22" fill="#e8264f"/><circle cx="33" cy="80" r="6" fill="#ff8aa6" opacity=".8"/><circle cx="75" cy="82" r="6" fill="#ff8aa6" opacity=".8"/></svg>'},
+ {id:'shades',label:'Shades',emoji:'🕶️',svg:'<svg viewBox="0 0 140 70" aria-hidden="true"><rect x="6" y="12" width="56" height="40" rx="15" fill="#1b1220"/><rect x="78" y="12" width="56" height="40" rx="15" fill="#1b1220"/><path d="M62 26h16" stroke="#1b1220" stroke-width="7"/><path d="M16 22l16-3" stroke="#fff" stroke-width="3" opacity=".5" stroke-linecap="round"/><path d="M88 22l16-3" stroke="#fff" stroke-width="3" opacity=".5" stroke-linecap="round"/></svg>'},
+ {id:'stache',label:'Mustache',emoji:'🥸',svg:'<svg viewBox="0 0 140 70" aria-hidden="true"><path d="M70 26c-10-14-36-16-58-2 8 26 36 30 58 8 22 22 50 18 58-8-22-14-48-12-58 2z" fill="#3a2418"/></svg>'},
+ {id:'crown',label:'Crown',emoji:'👑',svg:'<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M10 78L18 20l28 28 14-34 14 34 28-28 8 58z" fill="#ffd24d" stroke="#d9a21b" stroke-width="4" stroke-linejoin="round"/><circle cx="18" cy="18" r="6" fill="#ff5fa7"/><circle cx="60" cy="12" r="6" fill="#8d6dff"/><circle cx="102" cy="18" r="6" fill="#ff5fa7"/></svg>'}
+];
+function boothGrain(ctx,x,y,w,h,amount){
+  const g=document.createElement('canvas');g.width=Math.ceil(w/2);g.height=Math.ceil(h/2);
+  const gc=g.getContext('2d'),id=gc.createImageData(g.width,g.height);
+  for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.round(amount*255)}
+  gc.putImageData(id,0,0);
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  const vg=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*.3,x+w/2,y+h/2,Math.max(w,h)*.7);
+  vg.addColorStop(0,'rgba(40,25,10,0)');vg.addColorStop(1,'rgba(40,25,10,.45)');ctx.fillStyle=vg;ctx.fillRect(x,y,w,h);
+  ctx.globalCompositeOperation='overlay';ctx.imageSmoothingEnabled=false;ctx.drawImage(g,x,y,w,h);
+  ctx.restore();
+}
+const booth={stream:null,key:'',shots:{host:[],guest:[]},room:null,filter:'vintage',sticker:'lollipop',pos:{x:50,y:72},busy:false,loading:false};
+const BOOTH_FILTERS={vintage:'sepia(.9) contrast(1.18) brightness(1.03) saturate(.85)',film:'grayscale(1) contrast(1.3) brightness(1.06) sepia(.12)',none:'none',warm:'sepia(.35) saturate(1.3) brightness(1.05)',soft:'brightness(1.1) contrast(.92) saturate(1.1)'};
+const boothVintage=()=>booth.filter==='vintage'||booth.filter==='film';
+function stopBooth(){if(booth.stream){booth.stream.getTracks().forEach(t=>t.stop());booth.stream=null}}
+function boothPaint(room,content,code){
+  booth.room=room;
+  if(!content.querySelector('#bmRoot')){
+    booth.key='';booth.shots={host:[],guest:[]};
+    content.innerHTML=`<div id="bmRoot" style="display:grid;gap:12px;justify-items:center">
+      <p class="online-status" id="bmStatus" style="margin:6px 0"></p>
+      <div id="bmFrame" class="grainy" data-filter="${booth.filter}" style="position:relative;width:min(100%,320px);aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:#241437">
+        <video id="bmVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:none"></video>
+        <div id="bmEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-align:center;padding:16px">📸 Tap “Start camera” to join the booth</div>
+        <div id="bmLive" style="position:absolute;left:50%;top:72%;transform:translate(-50%,-50%);width:34%;touch-action:none;cursor:grab;z-index:3"></div>
+        <div id="bmCount" style="position:absolute;inset:0;display:none;place-items:center;color:#fff;font-size:96px;font-weight:900;text-shadow:0 4px 18px rgba(0,0,0,.5);z-index:4;pointer-events:none"></div>
+      </div>
+      <small style="color:var(--mute)">Drag the sticker where you want it.</small>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button class="btn ghost" id="bmCam">Start camera</button>
+        <select id="bmFilter" aria-label="Filter"><option value="vintage">Vintage sepia</option><option value="film">Film B&amp;W</option><option value="none">Normal</option><option value="warm">Warm</option><option value="soft">Soft</option></select>
+        <select id="bmSticker" aria-label="Sticker"><option value="">No sticker</option>${BOOTH_NEW_STICKERS.map(s=>`<option value="${s.id}">${s.emoji} ${s.label}</option>`).join('')}</select>
+        <button class="btn" id="bmSnap" disabled>Snap!</button>
+      </div>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button class="btn ghost sm" id="bmClear">Retake mine</button>
+        <button class="btn sm" id="bmSave" disabled>Save our photo strip</button>
+      </div>
+      <div id="bmStrips" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px"></div>
+    </div>`;
+    const v=$('#bmVideo'),live=$('#bmLive'),frame=$('#bmFrame'),paintLive=()=>{const s=BOOTH_NEW_STICKERS.find(x=>x.id===booth.sticker);live.innerHTML=s?s.svg:'';live.style.left=booth.pos.x+'%';live.style.top=booth.pos.y+'%';const svg=live.querySelector('svg');if(svg){svg.style.width='100%';svg.style.height='auto';svg.style.display='block';svg.style.filter='drop-shadow(0 2px 5px rgba(0,0,0,.4))'}};
+    $('#bmFilter').value=booth.filter;$('#bmSticker').value=booth.sticker;paintLive();
+    $('#bmFilter').onchange=e=>{booth.filter=e.target.value;v.style.filter=BOOTH_FILTERS[booth.filter];frame.dataset.filter=booth.filter};
+    $('#bmSticker').onchange=e=>{booth.sticker=e.target.value;paintLive()};
+    let drag=false;const mv=e=>{const r=frame.getBoundingClientRect();booth.pos.x=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));booth.pos.y=Math.max(8,Math.min(92,(e.clientY-r.top)/r.height*100));live.style.left=booth.pos.x+'%';live.style.top=booth.pos.y+'%'};
+    live.onpointerdown=e=>{if(!live.innerHTML)return;drag=true;live.setPointerCapture(e.pointerId);live.style.cursor='grabbing';mv(e)};
+    live.onpointermove=e=>{if(drag)mv(e)};live.onpointerup=live.onpointercancel=()=>{drag=false;live.style.cursor='grab'};
+    $('#bmCam').onclick=async()=>{
+      try{stopBooth();booth.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:960}},audio:false});v.srcObject=booth.stream;v.style.display='block';v.style.filter=BOOTH_FILTERS[booth.filter];$('#bmEmpty').style.display='none';$('#bmCam').textContent='Camera on';boothUpdate()}
+      catch(e){$('#bmStatus').textContent='Could not open the camera. Allow camera access in your browser settings and try again.'}
+    };
+    $('#bmSnap').onclick=()=>boothSnap(code);
+    $('#bmClear').onclick=async()=>{try{await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify({action:'clear'})});booth.shots[booth.room.role]=[];booth.room.counts[booth.room.role]=0;booth.key='';drawBoothStrips()}catch(e){$('#bmStatus').textContent=e.message}};
+    $('#bmSave').onclick=boothSave;
+  }
+  boothUpdate();
+  const key=room.counts.host+'-'+room.counts.guest;
+  if(key!==booth.key&&!booth.loading){
+    booth.loading=true;
+    apiJson(`/api/rooms/${encodeURIComponent(code)}/shots`).then(d=>{booth.shots=d.shots;booth.key=key;drawBoothStrips()}).catch(()=>{}).finally(()=>{booth.loading=false});
+  }
+}
+function boothUpdate(){
+  const room=booth.room;if(!room||!$('#bmStatus'))return;
+  const me=room.counts[room.role],other=room.counts[room.role==='host'?'guest':'host'],oppName=(room.role==='host'?room.guestName:room.hostName)||'Your friend';
+  if(!booth.busy)$('#bmStatus').textContent=me>=4&&other>=4?'Strip complete! 🎉 Save it below.':`You ${me}/4 · ${oppName} ${other}/4`;
+  $('#bmSnap').disabled=!booth.stream||me>=4||booth.busy;
+  $('#bmSave').disabled=me+other===0;
+}
+function drawBoothStrips(){
+  const el=$('#bmStrips'),room=booth.room;if(!el||!room)return;
+  const col=(role,label)=>`<div><b style="font-size:13px">${esc(label)}</b><div style="display:grid;gap:6px;margin-top:6px;background:#efe9da;padding:6px;border-radius:4px">${[0,1,2,3].map(i=>{const src=(booth.shots[role]||[])[i];return src?`<img src="${src}" alt="Photo ${i+1}" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">`:`<div style="aspect-ratio:3/4;border:2px dashed #cfc6b3;display:grid;place-items:center;color:#a39b88">${i+1}</div>`}).join('')}</div></div>`;
+  el.innerHTML=col('host',room.hostName||'Host')+col('guest',room.guestName||'Guest');
+  boothUpdate();
+}
+async function boothSnap(code){
+  const v=$('#bmVideo'),room=booth.room;if(!booth.stream||booth.busy||!room)return;
+  booth.busy=true;$('#bmSnap').disabled=true;
+  const cnt=$('#bmCount');cnt.style.display='grid';
+  for(const n of [3,2,1]){cnt.textContent=n;await new Promise(r=>setTimeout(r,800))}
+  cnt.style.display='none';
+  const W=270,H=360,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const vw=v.videoWidth||W,vh=v.videoHeight||H,scale=Math.max(W/vw,H/vh),sw=W/scale,sh=H/scale,sx=(vw-sw)/2,sy=(vh-sh)/2;
+  x.save();x.translate(W,0);x.scale(-1,1);try{x.filter=BOOTH_FILTERS[booth.filter]}catch(e){}x.drawImage(v,sx,sy,sw,sh,0,0,W,H);x.restore();
+  if(boothVintage())boothGrain(x,0,H*0,W,H,.45);
+  const st=BOOTH_NEW_STICKERS.find(s=>s.id===booth.sticker);
+  if(st){try{const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(st.svg);await im.decode();const sz=W*.34,ar=(im.naturalHeight||1)/(im.naturalWidth||1);x.drawImage(im,W*booth.pos.x/100-sz/2,H*booth.pos.y/100-sz*ar/2,sz,sz*ar)}catch(e){}}
+  const image=c.toDataURL('image/jpeg',.55);
+  try{
+    await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify({image})});
+    (booth.shots[room.role]=booth.shots[room.role]||[]).push(image);room.counts[room.role]++;drawBoothStrips();
+  }catch(e){$('#bmStatus').textContent=e.message}
+  booth.busy=false;boothUpdate();
+}
+async function boothSave(){
+  const room=booth.room;if(!room)return;
+  const load=src=>new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
+  const cw=270,ch=360,pad=22,gap=14,top=70,bottom=70,W=pad*3+cw*2,H=top+bottom+ch*4+gap*3;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const vint=boothVintage();
+  if(vint){x.fillStyle='#efe9da';x.fillRect(0,0,W,H)}else{const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#ff8cc6');g.addColorStop(1,'#8d6dff');x.fillStyle=g;x.fillRect(0,0,W,H)}
+  const ink=vint?'#3a2f22':'#fff';
+  x.fillStyle=ink;x.textAlign='center';x.font='900 28px Georgia,serif';x.fillText('ARCADE PHOTO BOOTH',W/2,46);
+  for(const [ci,role] of ['host','guest'].entries()){
+    const px=pad+ci*(cw+pad);
+    for(let i=0;i<4;i++){
+      const py=top+i*(ch+gap),src=(booth.shots[role]||[])[i],img=src?await load(src):null;
+      if(img)x.drawImage(img,px,py,cw,ch);else{x.fillStyle=vint?'rgba(0,0,0,.08)':'rgba(255,255,255,.25)';x.fillRect(px,py,cw,ch)}
+    }
+    x.fillStyle=ink;x.font='700 22px Georgia,serif';x.fillText((role==='host'?room.hostName:room.guestName)||'Player',px+cw/2,H-26);
+  }
+  c.toBlob(b=>{const a=document.createElement('a');a.download='arcade-photo-booth-duo.jpg';a.href=URL.createObjectURL(b);a.click()},'image/jpeg',.92);
+}
 function renderOnline(){
   if(roomPoll){clearInterval(roomPoll);roomPoll=null}
   if(activeRoomCode){renderOnlineRoom();return}
-  $('#view').innerHTML=`<h2>Play with a friend</h2><p class="sub">Start a private room, send the six-letter code, and play from different devices.</p><section class="card"><b>Create an invite room</b><p class="sub">Online mode is ready for Tic-Tac-Toe and Rock-Paper-Scissors.</p><div class="online-form"><select id="roomGame" aria-label="Choose an online game"><option value="ttt">Tic-Tac-Toe</option><option value="rps">Rock-Paper-Scissors</option></select><button class="btn" id="createRoom">Create room</button></div></section><section class="card"><b>Join a friend's room</b><p class="sub">Ask your friend for their six-character room code.</p><div class="online-form"><input id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC234" aria-label="Room code"><button class="btn" id="joinRoom">Join room</button></div><div id="onlineStatus" class="online-status" aria-live="polite"></div></section><section class="card"><b>How it works</b><p>Both players need an Arcade account and must open the same hosted Arcade site. Rooms sync through the server, so you can play from different places.</p></section>`;
+  $('#view').innerHTML=`<h2>Play with a friend</h2><p class="sub">Start a private room, send the six-letter code, and play from different devices.</p><section class="card"><b>Create an invite room</b><p class="sub">Online mode is ready for Tic-Tac-Toe, Rock-Paper-Scissors and a two-player Photo Booth.</p><div class="online-form"><select id="roomGame" aria-label="Choose an online game"><option value="ttt">Tic-Tac-Toe</option><option value="rps">Rock-Paper-Scissors</option><option value="booth">Photo Booth (2 players)</option></select><button class="btn" id="createRoom">Create room</button></div></section><section class="card"><b>Join a friend's room</b><p class="sub">Ask your friend for their six-character room code.</p><div class="online-form"><input id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC234" aria-label="Room code"><button class="btn" id="joinRoom">Join room</button></div><div id="onlineStatus" class="online-status" aria-live="polite"></div></section><section class="card"><b>How it works</b><p>Both players need an Arcade account and must open the same hosted Arcade site. Rooms sync through the server, so you can play from different places.</p></section>`;
   $('#joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'')};
   $('#createRoom').onclick=()=>openOnlineRoom($('#roomGame').value);
   $('#joinRoom').onclick=()=>joinOnlineRoom($('#joinCode').value);
@@ -461,6 +602,7 @@ function renderOnlineRoom(){
   const paint=room=>{
     if(tab!=='online'||activeRoomCode!==code||!document.body.contains(content))return;
     const opponent=room.role==='host'?room.guestName:room.hostName;
+    if(room.game==='booth'&&room.status!=='waiting'){boothPaint(room,content,code);$('#roomStatus').textContent='Connected with '+(opponent||'your friend')+'.';return}
     let html='';
     if(room.status==='waiting')html=`<div class="empty-art">Waiting for a friend to join. Share code <b>${esc(room.code)}</b>.</div>`;
     else if(room.game==='ttt'){
@@ -483,7 +625,7 @@ function renderOnlineRoom(){
   };
   const load=async()=>{try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);paint(room)}catch(e){if(tab==='online'&&activeRoomCode===code&&$('#roomStatus'))$('#roomStatus').textContent=e.message}};
   const copy=$('#copyRoom');copy.onclick=async()=>{try{await navigator.clipboard.writeText(code);$('#roomStatus').textContent='Room code copied.'}catch(e){$('#roomStatus').textContent='Share this room code: '+code}};
-  $('#leaveRoom').onclick=()=>{activeRoomCode='';if(roomPoll){clearInterval(roomPoll);roomPoll=null}render()};
+  $('#leaveRoom').onclick=()=>{stopBooth();activeRoomCode='';if(roomPoll){clearInterval(roomPoll);roomPoll=null}render()};
   load();roomPoll=setInterval(load,1800);
 }
 async function sendRoomMove(code,move){
@@ -592,7 +734,7 @@ function end(g,won,text,score=0,nr){
   if(nx)$('#nxt').onclick=()=>{LV++;startGame(g)};
   $('#ex').onclick=()=>{playing=null;render()};
 }
-function startGame(g){({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide})[g]()}
+function startGame(g){({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide,mines,c4,hangman,hilo,stroop})[g]()}
 
 /* Tic-Tac-Toe */
 function ttt(){
@@ -1440,11 +1582,11 @@ function slide(){
 }
 /* Photo Booth */
 function photo(){
-  frame('photo','<div class="booth-layout"><section class="booth-capture"><div class="camera booth-viewer" id="boothViewer"><video id="cam" autoplay playsinline></video><img id="photoSource" alt="Selected photo"><canvas id="photoCanvas"></canvas><div id="photoEmpty" class="booth-empty">Your portrait booth</div><div id="liveSticker" class="live-sticker"></div><div id="countdown" class="countdown" aria-live="polite"></div></div><div class="booth-actions"><button class="btn" id="startCam">Enable camera</button><label class="btn ghost upload-btn">Choose image<input id="pickImg" type="file" accept="image/*"></label><button class="btn" id="startStrip" disabled>Take four photos</button></div><p id="boothStatus" class="booth-status">Allow camera access, then start your strip.</p><canvas id="photoCanvas" hidden></canvas></section><section class="booth-editor"><div class="editor-section"><b>Look filters</b><div class="photo-tools" id="filters"></div></div><div class="editor-section"><b>Face filters & overlays</b><div class="photo-tools" id="stickers"></div></div><div class="editor-section caption-tools"><label for="stripCaption">Strip caption</label><input id="stripCaption" maxlength="48" placeholder="A little moment" value="ARCADE PHOTO CLUB"><label for="captionFont">Font</label><select id="captionFont"><option value="Fredoka">Playful</option><option value="Quicksand">Clean</option><option value="Georgia">Classic</option><option value="cursive">Handwritten</option></select><label for="stripColor">Strip colour</label><input id="stripColor" type="color" value="#fff5fb" aria-label="Choose strip colour"></div><div class="strip-heading"><b>Your photo strip</b><span id="shotCount">0 / 4</span></div><div id="strip" class="strip"></div><div class="booth-actions"><button class="btn" id="downloadStrip" disabled>Download strip</button><button class="btn ghost" id="clearStrip" disabled>New strip</button></div></section></div>');
-  const v=$('#cam'),source=$('#photoSource'),viewer=$('#boothViewer'),cv=$('#photoCanvas'),ctx=cv.getContext('2d');let stream=null,filter='soft',sticker='bunny',shots=[],busy=false;
-  const filters={soft:'Candy glow',warm:'Sunset',mono:'Soft mono',dream:'Dreamy haze',vivid:'Neon pop',fog:'Misty fog',cool:'Blue hour',normal:'Natural'};
-  const looks={soft:'brightness(1.08) contrast(1.06) saturate(1.22)',warm:'sepia(.18) saturate(1.38) hue-rotate(-18deg)',mono:'grayscale(1) contrast(1.1)',dream:'brightness(1.1) saturate(.8) hue-rotate(14deg)',vivid:'saturate(1.45) contrast(1.08) brightness(1.12)',fog:'brightness(1.12) contrast(.9) saturate(.72)',cool:'saturate(.9) hue-rotate(18deg) brightness(1.05)',normal:'none'};
-  const stickerSet=[
+  frame('photo','<div class="booth-layout"><section class="booth-capture"><div class="camera booth-viewer" id="boothViewer"><video id="cam" autoplay playsinline></video><img id="photoSource" alt="Selected photo"><canvas id="photoCanvas"></canvas><div id="photoEmpty" class="booth-empty">Your portrait booth</div><div id="liveSticker" class="live-sticker"></div><div id="countdown" class="countdown" aria-live="polite"></div></div><div class="booth-actions"><button class="btn" id="startCam">Enable camera</button><label class="btn ghost upload-btn">Choose image<input id="pickImg" type="file" accept="image/*"></label><button class="btn" id="startStrip" disabled>Take four photos</button></div><p id="boothStatus" class="booth-status">Allow camera access, then start your strip.</p><canvas id="photoCanvas" hidden></canvas></section><section class="booth-editor"><div class="editor-section"><b>Look filters</b><div class="photo-tools" id="filters"></div></div><div class="editor-section"><b>Face filters & overlays</b><div class="photo-tools" id="stickers"></div></div><div class="editor-section caption-tools"><label for="stripCaption">Strip caption</label><input id="stripCaption" maxlength="48" placeholder="A little moment" value="ARCADE PHOTO CLUB"><label for="captionFont">Font</label><select id="captionFont"><option value="Fredoka">Playful</option><option value="Quicksand">Clean</option><option value="Georgia">Classic</option><option value="cursive">Handwritten</option></select><label for="stripColor">Strip colour</label><input id="stripColor" type="color" value="#efe9da" aria-label="Choose strip colour"></div><div class="strip-heading"><b>Your photo strip</b><span id="shotCount">0 / 4</span></div><div id="strip" class="strip"></div><div class="booth-actions"><button class="btn" id="downloadStrip" disabled>Download strip</button><button class="btn ghost" id="clearStrip" disabled>New strip</button></div></section></div>');
+  const v=$('#cam'),source=$('#photoSource'),viewer=$('#boothViewer'),cv=$('#photoCanvas'),ctx=cv.getContext('2d');let stream=null,filter='vintage',sticker='lollipop',shots=[],busy=false,pos={x:50,y:72};
+  const filters={vintage:'Vintage sepia',film:'Film B&W',soft:'Candy glow',warm:'Sunset',mono:'Soft mono',dream:'Dreamy haze',vivid:'Neon pop',fog:'Misty fog',cool:'Blue hour',normal:'Natural'};
+  const looks={vintage:'sepia(.9) contrast(1.18) brightness(1.03) saturate(.85)',film:'grayscale(1) contrast(1.3) brightness(1.06) sepia(.12)',soft:'brightness(1.08) contrast(1.06) saturate(1.22)',warm:'sepia(.18) saturate(1.38) hue-rotate(-18deg)',mono:'grayscale(1) contrast(1.1)',dream:'brightness(1.1) saturate(.8) hue-rotate(14deg)',vivid:'saturate(1.45) contrast(1.08) brightness(1.12)',fog:'brightness(1.12) contrast(.9) saturate(.72)',cool:'saturate(.9) hue-rotate(18deg) brightness(1.05)',normal:'none'};
+  const stickerSet=[...BOOTH_NEW_STICKERS,
     {id:'bunny',label:'Bunny',emoji:'🐰',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M38 34c-18 0-29 11-29 25 0 15 11 26 24 28-6 10-8 18-8 18h18c0-8 3-16 11-18l-8 18h17l-8-18c8 2 11 10 11 18h18s-2-8-8-18c13-2 24-13 24-28 0-14-11-25-29-25-10 0-18 5-23 12-5-7-13-12-23-12z" fill="#f8d5e3"/><path d="M20 60c-4-11-4-20 10-25" stroke="#ff6ca9" stroke-width="6" stroke-linecap="round"/><path d="M100 60c4-11 4-20-10-25" stroke="#ff6ca9" stroke-width="6" stroke-linecap="round"/><circle cx="48" cy="56" r="5" fill="#2a1837"/><circle cx="72" cy="56" r="5" fill="#2a1837"/><path d="M56 72c5 6 11 6 16 0" stroke="#2a1837" stroke-width="5" stroke-linecap="round"/></svg>'},
     {id:'cat',label:'Cat',emoji:'🐱',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M28 42l-18 20 18 10 12-17 12 17 18-10-18-20-12 10-12-10zm49 0l18 20-18 10-12-17-12 17-18-10 18-20 12 10 12-10z" fill="#ffcb75"/><path d="M32 40l-14-18 16 2 8 15zm56 0l14-18-16 2-8 15zm-30 18c-14 0-24 11-24 24 0 13 10 20 24 20s24-7 24-20c0-13-10-24-24-24z" fill="#ffe3ac"/><circle cx="48" cy="64" r="4" fill="#2a1837"/><circle cx="72" cy="64" r="4" fill="#2a1837"/><path d="M52 80c8 7 16 7 24 0" stroke="#2a1837" stroke-width="4" stroke-linecap="round"/><path d="M48 18l8-15 8 15" fill="#ff8bb6"/></svg>'},
     {id:'dog',label:'Dog',emoji:'🐶',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M31 38Q10 24 14 57q2 16 20 19M89 38q21-14 17 19-2 16-20 19" fill="#b97945" stroke="#80502e" stroke-width="5"/><circle cx="60" cy="61" r="39" fill="#f1c792"/><circle cx="46" cy="55" r="4" fill="#2a1837"/><circle cx="74" cy="55" r="4" fill="#2a1837"/><ellipse cx="60" cy="72" rx="12" ry="9" fill="#47353a"/><path d="M60 81q-8 11-17 2m17-2q8 11 17 2" fill="none" stroke="#47353a" stroke-width="4" stroke-linecap="round"/></svg>'},
@@ -1461,7 +1603,7 @@ function photo(){
     $('#stickers').innerHTML=`<button class="filter-chip ${!sticker?'on':''}" data-sticker="">None</button>`+stickerSet.map(x=>`<button class="filter-chip sticker-choice ${x.id===sticker?'on':''}" data-sticker="${x.id}" aria-label="${x.label} sticker">${x.emoji} ${x.label}</button>`).join('');
     $('#liveSticker').innerHTML=sticker==='writing'?`<span class="live-writing">${esc($('#stripCaption').value.trim()||'Your caption')}</span>`:sticker?stickerSvg(sticker):'';
     viewer.dataset.filter=filter;
-    $('#filters').querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;paintControls();viewer.dataset.filter=filter;v.style.filter=css();source.style.filter=css();renderStrip()});
+    $('#liveSticker').style.setProperty('--sx',pos.x);$('#liveSticker').style.setProperty('--sy',pos.y);$('#filters').querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;if(filter==='vintage'||filter==='film')$('#stripColor').value='#efe9da';paintControls();viewer.dataset.filter=filter;v.style.filter=css();source.style.filter=css();renderStrip()});
     $('#stickers').querySelectorAll('[data-sticker]').forEach(b=>b.onclick=()=>{sticker=b.dataset.sticker||'';paintControls();renderStrip()});
   };
   function renderStrip(){
@@ -1469,7 +1611,7 @@ function photo(){
     const selectedSticker=stickerSet.find(item=>item.id===sticker);
     $('#strip').style.backgroundColor=$('#stripColor').value;
     const overlay=sticker==='writing'?`<span class="strip-sticker"><span class="photo-writing">${esc($('#stripCaption').value.trim()||'Your caption')}</span></span>`:selectedSticker?`<span class="strip-sticker">${selectedSticker.svg}</span><span class="strip-emoji" aria-hidden="true">${selectedSticker.emoji}</span>`:'';
-    $('#strip').innerHTML=shots.length?shots.map((shot,i)=>`<div class="strip-photo" data-filter="${filter}"><img src="${shot}" alt="Photo ${i+1}" style="filter:${css()}">${overlay}<span class="frame-number">0${i+1}</span></div>`).join(''):'<div class="strip-placeholder">Four portrait frames will appear here.</div>';
+    $('#strip').innerHTML=shots.length?shots.map((shot,i)=>`<div class="strip-photo" data-filter="${filter}" style="--sx:${pos.x};--sy:${pos.y}"><img src="${shot}" alt="Photo ${i+1}" style="filter:${css()}">${overlay}<span class="frame-number">0${i+1}</span></div>`).join(''):'<div class="strip-placeholder">Four portrait frames will appear here.</div>';
     $('#downloadStrip').disabled=shots.length!==4;$('#clearStrip').disabled=!shots.length;
   }
   $('#startCam').onclick=async()=>{
@@ -1509,14 +1651,144 @@ function photo(){
       const scale=Math.max(fw/im.width,frameH/im.height),sw=fw/scale,sh=frameH/scale,sx=(im.width-sw)/2,sy=(im.height-sh)/2;
       c.save();c.beginPath();c.rect(x,y,fw,frameH);c.clip();c.filter=css();c.drawImage(im,sx,sy,sw,sh,x,y,fw,frameH);c.filter='none';
       if(filter==='fog'){const haze=c.createRadialGradient(x+fw*.5,y+frameH*.4,frameH*.06,x+fw*.5,y+frameH*.45,frameH*.75);haze.addColorStop(0,'rgba(255,255,255,.34)');haze.addColorStop(1,'rgba(255,255,255,.03)');c.fillStyle=haze;c.fillRect(x,y,fw,frameH)}
-      if(selectedSticker?.svg&&stickerImage?.complete&&stickerImage.naturalWidth>0){c.drawImage(stickerImage,x+fw*.04,y+frameH*.035,fw*.19,fw*.19);c.textAlign='center';c.font=`${Math.round(fw*.09)}px sans-serif`;c.fillText(selectedSticker.emoji,x+fw*.85,y+frameH*.14)}
+      if(filter==='vintage'||filter==='film')boothGrain(c,x,y,fw,frameH,.5);
+      if(selectedSticker?.svg&&stickerImage?.complete&&stickerImage.naturalWidth>0){{const sz=fw*.34,ar=(stickerImage.naturalHeight||1)/(stickerImage.naturalWidth||1);c.drawImage(stickerImage,x+fw*pos.x/100-sz/2,y+frameH*pos.y/100-sz*ar/2,sz,sz*ar)}}
       if(sticker==='writing'){c.fillStyle='#fffdf0';c.globalAlpha=.92;c.fillRect(x+fw*.1,y+frameH*.08,fw*.8,56);c.globalAlpha=1;c.fillStyle='#263329';c.textAlign='center';c.font=`700 28px "${$('#captionFont').value}",sans-serif`;c.fillText($('#stripCaption').value.trim()||'Your caption',x+fw/2,y+frameH*.08+38,fw*.74)}
       c.restore();
     }
     c.fillStyle=textColor;c.textAlign='center';c.font='600 16px Quicksand,sans-serif';c.fillText('ARCADE HUB  ·  PHOTO BOOTH',width/2,canvas.height-36);
     const link=document.createElement('a');link.download='arcade-photo-strip.jpg';link.href=canvas.toDataURL('image/jpeg',.94);link.click();
   };
+  {const ls=$('#liveSticker');let drag=false;
+   const mv=e=>{const r=viewer.getBoundingClientRect();pos.x=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));pos.y=Math.max(8,Math.min(92,(e.clientY-r.top)/r.height*100));ls.style.setProperty('--sx',pos.x);ls.style.setProperty('--sy',pos.y)};
+   ls.onpointerdown=e=>{if(!ls.innerHTML)return;drag=true;ls.setPointerCapture(e.pointerId);ls.style.cursor='grabbing';mv(e)};
+   ls.onpointermove=e=>{if(drag)mv(e)};
+   ls.onpointerup=ls.onpointercancel=()=>{drag=false;ls.style.cursor='grab';renderStrip()}}
   paintControls();renderStrip();
+}
+/* Minesweeper */
+function mines(){
+  const N=6+Math.min(3,Math.floor(LV/8)),M=Math.min(Math.floor(N*N*.22),4+Math.floor(LV/3)+(N-6)*2);
+  const cells=Array.from({length:N*N},()=>({m:0,r:0,f:0,n:0}));let placed=false,flag=false,over=false;const t0=Date.now();
+  frame('mines','<div class="msg" id="m" style="font-size:15px"></div><div class="row"><button class="btn" id="fm"></button></div><div id="mg" style="display:grid;gap:4px;width:min(100%,380px);margin:10px auto"></div>');
+  const nb=i=>{const x=i%N,y=(i/N)|0,o=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const a=x+dx,b=y+dy;if(a>=0&&b>=0&&a<N&&b<N)o.push(b*N+a)}return o};
+  const place=s=>{const bad=new Set([s,...nb(s)]);let k=0;while(k<M){const i=Math.floor(Math.random()*N*N);if(!bad.has(i)&&!cells[i].m){cells[i].m=1;k++}}cells.forEach((c,i)=>c.n=nb(i).filter(j=>cells[j].m).length);placed=true};
+  const COL=['','#2979ff','#2e7d32','#d32f2f','#6a1b9a','#e65100','#00838f','#333','#777'];
+  const paint=()=>{
+    $('#m').textContent=`Mines left: ${M-cells.filter(c=>c.f).length}`;
+    $('#fm').textContent=flag?'🚩 Flag mode (tap to switch)':'⛏️ Dig mode (tap to switch)';
+    $('#mg').style.gridTemplateColumns=`repeat(${N},1fr)`;
+    $('#mg').innerHTML=cells.map((c,i)=>{const show=c.r||(over&&c.m),t=c.f&&!show?'🚩':show?(c.m?'💣':(c.n||'')):'';return `<button data-i="${i}" style="aspect-ratio:1;padding:0;border-radius:6px;border:1px solid var(--line);font-size:clamp(14px,4vw,20px);font-weight:900;color:${COL[c.n]||'#333'};background:${show?(c.m?'#ffb3b3':'#f1ece6'):'#d9c9f0'}">${t}</button>`}).join('');
+    $('#mg').querySelectorAll('button').forEach(b=>b.onclick=()=>tap(+b.dataset.i));
+  };
+  function reveal(i){const st=[i];while(st.length){const j=st.pop(),c=cells[j];if(c.r||c.f)continue;c.r=1;if(!c.n&&!c.m)nb(j).forEach(k=>{if(!cells[k].r)st.push(k)})}}
+  function tap(i){
+    if(over)return;const c=cells[i];
+    if(flag){if(!c.r){c.f=c.f?0:1;snd('click')}paint();return}
+    if(c.f||c.r)return;
+    if(!placed)place(i);
+    if(c.m){over=true;snd('thud');paint();return setTimeout(()=>{if(document.body.contains($('#mg')))end('mines',false,'Boom! 💥',cells.filter(x=>x.r).length*10)},1100)}
+    reveal(i);snd('pop');paint();
+    if(cells.every(x=>x.m||x.r)){const secs=(Date.now()-t0)/1000;end('mines',true,'Field cleared! 🚩',cells.filter(x=>x.r).length*10+Math.max(0,(300-secs)|0)+LV*50)}
+  }
+  $('#fm').onclick=()=>{flag=!flag;paint()};
+  paint();
+}
+/* Connect Four */
+function c4(){
+  const R=6,C=7,B=Array(R*C).fill(0),depth=1+Math.min(4,Math.floor(LV/6)),D=[[0,1],[1,0],[1,1],[1,-1]];let over=false,turn=1;
+  frame('c4','<div class="msg" id="m" style="font-size:15px"></div><div id="cb" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:min(100%,380px);margin:10px auto;background:#2a4fd6;padding:8px;border-radius:14px"></div>');
+  const drop=(b,c,p)=>{for(let r=R-1;r>=0;r--)if(!b[r*C+c]){b[r*C+c]=p;return r}return -1};
+  const wins=(b,p)=>{for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const [dr,dc] of D){let k=0;for(;k<4;k++){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=R||cc<0||cc>=C||b[rr*C+cc]!==p)break}if(k===4)return true}return false};
+  const valid=b=>[3,2,4,1,5,0,6].filter(c=>!b[c]);
+  const heur=b=>{let s=0;for(let r=0;r<R;r++)for(let c=0;c<C;c++)for(const [dr,dc] of D){let a=0,h=0,ok=true;for(let k=0;k<4;k++){const rr=r+dr*k,cc=c+dc*k;if(rr<0||rr>=R||cc<0||cc>=C){ok=false;break}const v=b[rr*C+cc];if(v===2)a++;else if(v===1)h++}if(!ok||(a&&h))continue;if(a===3)s+=5;else if(a===2)s+=2;if(h===3)s-=6;else if(h===2)s-=2}for(let r=0;r<R;r++)if(b[r*C+3]===2)s+=3;return s};
+  const mm=(b,d,al,be,max)=>{if(wins(b,2))return 1000+d;if(wins(b,1))return -1000-d;const v=valid(b);if(!v.length||!d)return heur(b);let best=max?-1e9:1e9;for(const c of v){const n=b.slice();drop(n,c,max?2:1);const sc=mm(n,d-1,al,be,!max);if(max){best=Math.max(best,sc);al=Math.max(al,sc)}else{best=Math.min(best,sc);be=Math.min(be,sc)}if(be<=al)break}return best};
+  const cpu=()=>{const v=valid(B);if(LV<4&&Math.random()<.35)return v[Math.floor(Math.random()*v.length)];let pick=v[0],best=-1e9;for(const c of v){const n=B.slice();drop(n,c,2);const sc=mm(n,depth-1,-1e9,1e9,false)+Math.random()*.5;if(sc>best){best=sc;pick=c}}return pick};
+  const paint=()=>{
+    $('#m').textContent=over?'':(turn===1?'Your move (red) 🔴':'CPU is thinking… 🟡');
+    $('#cb').innerHTML=B.map((v,i)=>`<button data-c="${i%C}" style="aspect-ratio:1;border-radius:50%;border:0;padding:0;background:${v===1?'#ff4d6d':v===2?'#ffd400':'#eaf0ff'}"></button>`).join('');
+    $('#cb').querySelectorAll('button').forEach(b=>b.onclick=()=>play(+b.dataset.c));
+  };
+  const empties=()=>B.filter(v=>!v).length;
+  function after(p){
+    if(wins(B,p)){over=true;paint();return setTimeout(()=>{if(!document.body.contains($('#cb')))return;p===1?end('c4',true,'Four in a row! 🔴',100+LV*20+empties()*5):end('c4',false,'The CPU connected four.',10)},700)}
+    if(!valid(B).length){over=true;return end('c4',false,"It's a draw!",30)}
+    return false;
+  }
+  function play(c){
+    if(over||turn!==1||B[c])return;drop(B,c,1);snd('pop');
+    if(after(1)!==false)return;turn=2;paint();
+    setTimeout(()=>{if(over||!document.body.contains($('#cb')))return;drop(B,cpu(),2);snd('click');if(after(2)!==false)return;turn=1;paint()},450);
+  }
+  paint();
+}
+/* Hangman */
+function hangman(){
+  const SHORT=['cake','moon','frog','sand','kite','wave','lamp','nest','rain','star','leaf','bell','duck','ship'],MID=['planet','guitar','rocket','castle','pencil','garden','window','jungle','bridge','candle','pirate','marble','rabbit','pillow'],LONG=['elephant','mountain','telescope','umbrella','butterfly','chocolate','adventure','lighthouse','dinosaur','waterfall','spaceship','treasure'];
+  const pool=LV<8?SHORT.concat(MID.slice(0,5)):LV<18?MID:LONG.concat(MID),w=pool[Math.floor(Math.random()*pool.length)],MAX=7,got=new Set();let wrong=0,done=false;
+  frame('hangman','<div class="msg" id="m" style="font-size:15px"></div><div style="text-align:center"><svg id="hs" viewBox="0 0 120 140" width="150" height="170" aria-hidden="true"></svg></div><div id="hw" style="text-align:center;font-size:clamp(26px,8vw,40px);font-weight:900;letter-spacing:.2em;margin:8px 0"></div><div id="hk" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:380px;margin:0 auto"></div>');
+  const parts=['<circle cx="80" cy="42" r="12"/>','<path d="M80 54v34"/>','<path d="M80 62l-16 16"/>','<path d="M80 62l16 16"/>','<path d="M80 88l-14 24"/>','<path d="M80 88l14 24"/>','<path d="M75 38l4 4m0-4l-4 4m10-4l4 4m0-4l-4 4" stroke-width="2"/>'];
+  const paint=()=>{
+    $('#m').textContent=`Misses left: ${MAX-wrong}`;
+    $('#hs').innerHTML=`<g stroke="#6d4c41" stroke-width="5" fill="none" stroke-linecap="round"><path d="M14 132h60M34 132V12h46v18"/></g><g stroke="#2a1837" stroke-width="4" fill="none" stroke-linecap="round">${parts.slice(0,wrong).join('')}</g>`;
+    $('#hw').textContent=[...w].map(l=>got.has(l)||done?l.toUpperCase():'_').join(' ');
+    $('#hk').innerHTML='abcdefghijklmnopqrstuvwxyz'.split('').map(l=>`<button data-l="${l}" ${got.has(l)||done?'disabled':''} style="padding:8px 0">${l.toUpperCase()}</button>`).join('');
+    $('#hk').querySelectorAll('button').forEach(b=>b.onclick=()=>pick(b.dataset.l));
+  };
+  function pick(l){
+    if(done)return;got.add(l);
+    if(w.includes(l))snd('pop');else{wrong++;snd('buzz')}
+    paint();
+    if([...w].every(x=>got.has(x))){done=true;setTimeout(()=>document.body.contains($('#hk'))&&end('hangman',true,'You saved them! 🔤',100+(MAX-wrong)*25+LV*20),500)}
+    else if(wrong>=MAX){done=true;paint();setTimeout(()=>document.body.contains($('#hk'))&&end('hangman',false,`The word was "${w}".`,[...w].filter(x=>got.has(x)).length*10),1200)}
+  }
+  paint();
+}
+/* Higher or Lower */
+function hilo(){
+  const TG=5+Math.floor(LV/2),SU=['♠','♥','♦','♣'],RK=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];let lives=LV<10?3:2,ok=0,deck=[],cur,note='';
+  const draw=()=>{if(!deck.length){for(let r=1;r<=13;r++)for(let s=0;s<4;s++)deck.push({r,s});for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}return deck.pop()};
+  cur=draw();
+  frame('hilo','<div class="msg" id="m" style="font-size:15px"></div><div id="hc" style="display:flex;justify-content:center;margin:12px 0"></div><div class="row"><button class="btn" id="hu">⬆ Higher</button><button class="btn" id="hd">⬇ Lower</button></div><p id="hn" class="booth-status" style="text-align:center"></p>');
+  const card=c=>`<div style="width:110px;height:154px;border-radius:12px;background:#fff;border:2px solid #d9d2e2;display:grid;place-items:center;font-size:44px;font-weight:900;color:${c.s===1||c.s===2?'#d32f2f':'#241437'};box-shadow:0 6px 16px #0002"><div style="text-align:center;line-height:1.1">${RK[c.r-1]}<br>${SU[c.s]}</div></div>`;
+  const paint=()=>{$('#m').textContent=`Correct ${ok}/${TG} · Lives ${'❤️'.repeat(lives)||'—'}`;$('#hc').innerHTML=card(cur);$('#hn').textContent=note};
+  function guess(up){
+    const nx=draw(),same=nx.r===cur.r,good=up?nx.r>cur.r:nx.r<cur.r;
+    if(same){note=`Same card (${RK[nx.r-1]}) — free pass!`;snd('click')}
+    else if(good){ok++;note='Correct!';snd('ding')}
+    else{lives--;note=`Wrong — it was ${RK[nx.r-1]}.`;snd('buzz')}
+    cur=nx;paint();
+    if(ok>=TG)return end('hilo',true,'Lucky streak! 🃏',ok*40+lives*30+LV*20);
+    if(lives<=0)return end('hilo',false,'Out of lives.',ok*40);
+  }
+  $('#hu').onclick=()=>guess(true);$('#hd').onclick=()=>guess(false);paint();
+}
+/* Color Clash (Stroop) */
+function stroop(){
+  const NAMES=[['Red','#e53935'],['Blue','#1e88e5'],['Green','#43a047'],['Yellow','#fdd835'],['Purple','#8e24aa'],['Orange','#fb8c00']],K=LV<5?4:LV<12?5:6,TG=8+LV,LIM=Math.max(1100,3000-LV*70);
+  let ok=0,lives=3,q=null,t0=0,timer=null;
+  frame('stroop','<div class="msg" id="m" style="font-size:15px"></div><div id="sw" style="text-align:center;font-size:clamp(44px,14vw,76px);font-weight:900;margin:14px auto;padding:14px;background:#2a2438;border-radius:16px;max-width:340px;min-height:70px"></div><div style="height:8px;background:#0001;border-radius:99px;overflow:hidden;max-width:340px;margin:0 auto 14px"><div id="sb" style="height:100%;background:var(--acc);width:100%"></div></div><div id="sp" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:340px;margin:0 auto"></div>');
+  const stop=()=>clearInterval(timer);
+  const info=()=>{$('#m').textContent=`Tap the INK colour · ${ok}/${TG} · Lives ${'❤️'.repeat(lives)}`};
+  function ask(){
+    const a=Math.floor(Math.random()*K);let b=Math.floor(Math.random()*K);if(Math.random()<.85)while(b===a)b=Math.floor(Math.random()*K);
+    q={ink:b};$('#sw').innerHTML=`<span style="color:${NAMES[b][1]}">${NAMES[a][0].toUpperCase()}</span>`;
+    $('#sp').innerHTML=NAMES.slice(0,K).map((n,i)=>`<button data-i="${i}" style="padding:14px 0;font-weight:800">${n[0]}</button>`).join('');
+    $('#sp').querySelectorAll('button').forEach(x=>x.onclick=()=>answer(+x.dataset.i));
+    info();t0=Date.now();stop();
+    timer=setInterval(()=>{
+      if(!document.body.contains($('#sb'))){stop();return}
+      const f=(Date.now()-t0)/LIM;$('#sb').style.width=Math.max(0,100-f*100)+'%';
+      if(f>=1){stop();miss()}
+    },50);
+  }
+  function miss(){lives--;snd('buzz');if(lives<=0){stop();return end('stroop',false,'Out of lives.',ok*30)}ask()}
+  function answer(i){
+    if(!q)return;stop();
+    if(i===q.ink){ok++;snd('pop');if(ok>=TG)return end('stroop',true,'Sharp eyes! 🎨',ok*30+lives*40+LV*20);ask()}
+    else miss();
+  }
+  ask();
 }
 /* Jenga */
 function jenga(){
