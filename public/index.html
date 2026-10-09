@@ -200,6 +200,23 @@ main{max-width:1280px;padding:26px 34px 108px}.app h1,.app h1:first-letter,.app 
 .strip-emoji{position:absolute;left:7%;bottom:7%;z-index:2;font-size:clamp(16px,3vw,28px);line-height:1;text-shadow:0 1px 4px #0008;filter:drop-shadow(0 1px 2px #0004);pointer-events:none}
 @media(max-width:520px){.boba-order{gap:8px;padding:9px}.boba-customer svg{width:56px;height:64px}.boba-thought{min-width:0;padding:9px 12px}.boba-work{grid-template-columns:1fr}.boba-cup-wrap{grid-template-columns:90px 1fr;justify-items:center;text-align:left}.boba-cup-wrap small{grid-column:1/-1;text-align:center}.beat-pad{border-radius:18px}}
 </style>
+<style>
+.wallet-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;border:1px solid var(--line);background:var(--card)}
+.wallet-card strong{font-size:24px;color:var(--acc)}.wallet-card small,.challenge-card p,.shop-card p{color:var(--mute)}
+.challenge-grid,.shop-grid,.badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.challenge-card,.shop-card,.badge-card{padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.challenge-card progress{width:100%;height:10px;accent-color:var(--acc)}
+.badge-card{display:flex;align-items:center;gap:12px}.badge-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;background:var(--accent-soft);font-size:24px}
+.online-form{display:flex;gap:9px;flex-wrap:wrap}.online-form select,.online-form input{height:42px;min-width:150px;padding:8px 10px;text-align:left;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font:inherit}
+.room-code{font-size:clamp(24px,7vw,40px);font-weight:800;letter-spacing:.18em;color:var(--acc);margin:4px 0}
+.online-board{display:grid;grid-template-columns:repeat(3,minmax(74px,110px));gap:7px;justify-content:center;margin:18px auto}
+.online-board button{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--acc);font-size:clamp(38px,10vw,64px);font-weight:800}
+.online-status{text-align:center;min-height:24px;color:var(--mute);margin:8px 0}
+.booth-viewer[data-filter="fog"]::after{content:"";position:absolute;z-index:1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.38),rgba(255,255,255,.08) 62%,transparent 100%)}
+.live-sticker,.countdown{z-index:2}.live-sticker{left:50%;right:auto;transform:translateX(-50%);width:min(45%,150px);display:flex;justify-content:center}.live-sticker svg{width:100%;height:auto;max-height:150px}.strip-sticker svg{display:block;width:clamp(42px,9vw,88px);height:auto}.live-writing,.photo-writing{padding:5px 9px;border-radius:5px;background:#fff9;color:#263329;font-size:clamp(13px,2.4vw,22px);font-weight:800;text-shadow:0 1px 1px #fff;text-align:center;max-width:70%;overflow-wrap:anywhere}
+.strip-photo[data-filter="fog"]::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.38),rgba(255,255,255,.08) 62%,transparent 100%)}
+@media(max-width:600px){.online-form>*{flex:1}.challenge-grid,.shop-grid,.badge-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="app">
@@ -291,10 +308,21 @@ PIC.fruit='<path d="M51 28q-2-15 14-20" stroke="#287846" stroke-width="6" fill="
 PIC.golf='<circle cx="27" cy="77" r="14" fill="#fff" stroke="#37834c" stroke-width="4"/><path d="M40 78V18" stroke="#55464a" stroke-width="5"/><path d="M43 20h34L61 36H43" fill="#ff5fa7"/><path d="M18 90q32-12 64 0" fill="none" stroke="#8bce72" stroke-width="7" stroke-linecap="round"/>';
 PIC.cat='<path d="M22 42L18 14l24 14q9-4 18 0l24-14-4 29q9 11 3 27-8 22-31 22T21 69q-6-15 1-27z" fill="#f0a75d" stroke="#9c5c32" stroke-width="4"/><path d="M29 31l11 8M71 39l11-8" stroke="#f7c0ba" stroke-width="7" stroke-linecap="round"/><circle cx="39" cy="53" r="4" fill="#392b33"/><circle cx="63" cy="53" r="4" fill="#392b33"/><path d="M46 64l5 4 5-4M51 68v5m0 0q-8 7-15 0m15 0q8 7 15 0" fill="none" stroke="#392b33" stroke-width="3" stroke-linecap="round"/><path d="M24 65L7 61m18 10L8 73m60-8l17-4m-17 12l17 3" stroke="#fff" stroke-width="3" stroke-linecap="round"/>';
 PIC.sketch='<rect x="18" y="16" width="64" height="68" rx="5" fill="#fff" stroke="#456080" stroke-width="4"/><path d="M29 66l13-18 11 10 14-22" fill="none" stroke="#ff5fa7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="65" cy="31" r="5" fill="#ffd05b"/><path d="M22 80l-8 11 14-5" fill="#8d6dff"/>';
-let me={stats:{},following:[]},myId='local',myName='',db=null,user=null,players={},names={},saveQueue=Promise.resolve();
-let tab='play',lbMode='all',lbGame='ttt',lbType='Strategy',playing=null,sel=null,LV=1,loaded=false,gameQuery='',gameFilter='All';
+let me={stats:{},following:[]},myId='local',myName='',db=null,user=null,players={},names={},saveQueue=Promise.resolve(),accountProfile={coins:0,loginStreak:0,ownedItems:[],badges:[],daily:{challenges:[],claimed:[]}};
+let tab='play',lbMode='all',lbGame='ttt',lbType='Strategy',playing=null,sel=null,LV=1,loaded=false,gameQuery='',gameFilter='All',activeRoomCode='',roomPoll=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function apiJson(path,options={}){
+  const headers={...(options.headers||{})},token=localStorage.getItem('ah_token')||'';
+  if(token)headers.Authorization='Bearer '+token;
+  if(options.body&&!headers['Content-Type'])headers['Content-Type']='application/json';
+  const response=await fetch((window.ARCADE_API||'')+path,{cache:'no-store',...options,headers});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||`Request failed (${response.status}).`);
+  return data;
+}
+async function loadAccountProfile(){try{accountProfile=await apiJson('/api/profile/me');return accountProfile}catch(e){return null}}
+function refreshAccountScreen(){if(tab==='daily')renderDaily();else if(tab==='shop')renderShop();else if(tab==='profile')renderProfile()}
 const st=g=>me.stats[g]||{p:0,w:0};
 function totals(stats){let p=0,w=0,pts=0;for(const k in stats){p+=stats[k].p||0;w+=stats[k].w||0;pts+=stats[k].pts||0}return{p,w,pts}}
 function allPlayers(){const a=Object.assign({},players);a[myId]=Object.assign({},a[myId]||{}, {stats:me.stats,following:me.following,name:myName});return a}
@@ -313,6 +341,7 @@ function save(){
 function record(g,won,score){
   const s=me.stats[g]||(me.stats[g]={p:0,w:0});
   s.p++;if(won)s.w++;s.pts=(s.pts||0)+score;if(won&&LV>=(s.lv||1)&&LV<MAX_LEVEL)s.lv=LV+1;s.best=Math.max(s.best||0,score);save();renderStats();
+  if(myId!=='local')apiJson('/api/daily/activity',{method:'POST',body:JSON.stringify({game:g,won:!!won})}).then(p=>{accountProfile=p;refreshAccountScreen()}).catch(e=>console.warn('Could not update daily challenge progress:',e.message));
 }
 function toggleFollow(id){
   const i=me.following.indexOf(id);
@@ -324,16 +353,17 @@ function renderStats(){
   $('#stats').innerHTML=`<div class="stat"><b>${t.p}</b><span>played</span></div><div class="stat"><b>${t.w}</b><span>won</span></div><div class="stat"><b>${t.pts}</b><span>points</span></div>`;
 }
 function renderSide(){
-  const S=[['play','Home'],['lb','Rankings'],['fol','People'],['chat','Chat'],['profile','Profile'],['settings','Settings']];
+  const S=[['play','Home'],['online','Multiplayer'],['daily','Daily'],['shop','Shop'],['lb','Rankings'],['fol','People'],['chat','Chat'],['profile','Profile'],['settings','Settings']];
   $('#side').innerHTML=`<div class="av">${esc((myName||'P')[0].toUpperCase())}</div><div class="nm">${esc(myName||'Player')}</div>`+S.map(([k,l])=>`<button class="sb ${tab===k?'on':''}" data-t="${k}">${l}</button>`).join('');
   $('#side').querySelectorAll('.sb').forEach(b=>b.onclick=()=>{tab=b.dataset.t;playing=null;sel=null;render()});
 }
 function render(){
+  if(tab!=='online'&&roomPoll){clearInterval(roomPoll);roomPoll=null}
   document.body.classList.toggle('pl',!!playing);
   renderStats();renderSide();
   $('#bk').style.visibility=(tab==='play'&&!playing&&!sel)?'hidden':'visible';
   if(tab==='play')playing?startGame(playing):sel?renderDetail():renderMenu();
-  else if(tab==='lb')renderLB();else if(tab==='fol')renderFollow();else if(tab==='chat')renderChat();else if(tab==='profile')renderProfile();else renderSettings();
+  else if(tab==='online')renderOnline();else if(tab==='daily')renderDaily();else if(tab==='shop')renderShop();else if(tab==='lb')renderLB();else if(tab==='fol')renderFollow();else if(tab==='chat')renderChat();else if(tab==='profile')renderProfile();else renderSettings();
   $('#note').textContent=db?'Live scores, shared with everyone who opens this page.':'Offline mode: only your own scores are shown.';
 }
 function renderMenu(){
@@ -347,18 +377,34 @@ function renderMenu(){
 }
 function renderProfile(){
   const total=totals(me.stats),played=GAMES.filter(g=>!g.tool&&st(g.id).p).sort((a,b)=>(st(b.id).pts||0)-(st(a.id).pts||0));
-  $('#view').innerHTML=`<div class="profile-head card"><div class="profile-row"><span class="avatar" style="width:64px;height:64px;font-size:24px">${esc((myName||'P')[0].toUpperCase())}</span><div><h2>${esc(myName||'Player')}</h2><span style="color:var(--mute)">Arcade player</span></div></div></div><div class="stats"><div class="stat"><b>${total.p}</b><span>games played</span></div><div class="stat"><b>${total.w}</b><span>wins</span></div><div class="stat"><b>${total.pts}</b><span>points earned</span></div></div><section class="card"><div class="top"><b>Recently played</b><span>${played.length} games</span></div>${played.length?`<div class="profile-games">${played.slice(0,8).map(g=>`<div class="profile-game"><span>${g.e} ${g.n}</span><span>${st(g.id).w||0} wins · best ${st(g.id).best||0}</span></div>`).join('')}</div>`:'<div class="empty-art">Your game results will show up here.</div>'}</section><button class="btn ghost" id="logout">Log out</button>`;
+  const badges=accountProfile.badges||[];
+  $('#view').innerHTML=`<div class="profile-head card"><div class="profile-row"><span class="avatar" style="width:64px;height:64px;font-size:24px">${esc((myName||'P')[0].toUpperCase())}</span><div><h2>${esc(myName||'Player')}</h2><span style="color:var(--mute)">Arcade player</span></div></div></div><section class="wallet-card card"><div><b>Coin wallet</b><br><small>Play, check in, and finish challenges to earn coins.</small></div><strong>🪙 ${accountProfile.coins||0}</strong><span>🔥 ${accountProfile.loginStreak||0}-day streak</span></section><div class="stats"><div class="stat"><b>${total.p}</b><span>games played</span></div><div class="stat"><b>${total.w}</b><span>wins</span></div><div class="stat"><b>${total.pts}</b><span>points earned</span></div></div><section class="card"><div class="top"><b>Badges</b><span>${badges.length} earned</span></div>${badges.length?`<div class="badge-grid">${badges.map(b=>`<div class="badge-card"><span class="badge-icon">${esc(b.icon)}</span><div><b>${esc(b.name)}</b><div style="color:var(--mute);font-size:13px">${esc(b.description)}</div></div></div>`).join('')}</div>`:'<div class="empty-art">Your first badge is waiting—play a game or check in for a few days.</div>'}</section><section class="card"><div class="top"><b>Recently played</b><span>${played.length} games</span></div>${played.length?`<div class="profile-games">${played.slice(0,8).map(g=>`<div class="profile-game"><span>${g.e} ${g.n}</span><span>${st(g.id).w||0} wins · best ${st(g.id).best||0}</span></div>`).join('')}</div>`:'<div class="empty-art">Your game results will show up here.</div>'}</section><button class="btn ghost" id="logout">Log out</button>`;
   $('#logout').onclick=()=>{localStorage.removeItem('ah_token');localStorage.removeItem('ah_id');localStorage.removeItem('ah_name');location.reload()};
 }
+function renderDaily(){
+  const d=accountProfile.daily||{},challenges=d.challenges||[],checked=!!accountProfile.checkedInToday;
+  $('#view').innerHTML=`<h2>Daily rewards</h2><p class="sub">Check in once a day, build your streak, and claim coins for playing.</p><section class="wallet-card card"><div><b>Today's check-in</b><br><small>${checked?'Come back tomorrow to keep your streak going.':'Your streak reward grows up to 45 coins.'}</small></div><strong>🪙 ${accountProfile.coins||0}</strong><button class="btn" id="checkin" ${checked?'disabled':''}>${checked?'Checked in today':'Claim daily check-in'}</button></section><p class="sub">🔥 Current streak: <b>${accountProfile.loginStreak||0} days</b></p><div class="challenge-grid">${challenges.map(c=>`<section class="challenge-card"><b>${esc(c.name)}</b><p>${esc(c.description)}</p><progress value="${c.progress}" max="${c.goal}"></progress><div class="top"><small>${c.progress}/${c.goal} · 🪙 ${c.reward}</small><button class="btn sm ${c.claimed?'ghost':''}" data-claim="${esc(c.id)}" ${c.claimed||c.progress<c.goal?'disabled':''}>${c.claimed?'Claimed':c.progress>=c.goal?'Claim coins':'In progress'}</button></div></section>`).join('')}</div><div id="dailyStatus" class="online-status" aria-live="polite"></div>`;
+  $('#checkin').onclick=async()=>{const b=$('#checkin');b.disabled=true;try{accountProfile=await apiJson('/api/daily/check-in',{method:'POST'});renderDaily();$('#dailyStatus').textContent=accountProfile.checkInReward?`Checked in! +${accountProfile.checkInReward} coins.`:'You already checked in today.'}catch(e){$('#dailyStatus').textContent=e.message;b.disabled=false}};
+  $('#view').querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{accountProfile=await apiJson('/api/daily/claim',{method:'POST',body:JSON.stringify({challengeId:b.dataset.claim})});renderDaily()}catch(e){$('#dailyStatus').textContent=e.message;b.disabled=false}});
+}
+async function renderShop(){
+  $('#view').innerHTML='<h2>Coin shop</h2><p class="sub">Use earned coins for new arcade color themes.</p><div class="online-status">Loading the shop…</div>';
+  try{
+    const data=await apiJson('/api/shop');if(tab!=='shop')return;accountProfile=data.profile;
+    $('#view').innerHTML=`<section class="wallet-card card"><div><b>Your balance</b><br><small>Earn more from daily check-ins and challenges.</small></div><strong>🪙 ${accountProfile.coins||0}</strong></section><div class="shop-grid">${data.items.map(item=>{const owned=(accountProfile.ownedItems||[]).includes(item.id);return`<section class="shop-card"><div class="top"><b>${esc(item.name)}</b><strong>🪙 ${item.price}</strong></div><p>${esc(item.description)}</p><button class="btn ${owned?'ghost':''}" data-buy="${esc(item.id)}" ${!owned&&(accountProfile.coins||0)<item.price?'disabled':''}>${owned?'Use theme':'Buy theme'}</button></section>`}).join('')}</div><div id="shopStatus" class="online-status" aria-live="polite"></div>`;
+    $('#view').querySelectorAll('[data-buy]').forEach(b=>b.onclick=async()=>{const item=data.items.find(x=>x.id===b.dataset.buy);if((accountProfile.ownedItems||[]).includes(b.dataset.buy)){pk=b.dataset.buy;applyPalette(pk);$('#shopStatus').textContent=`${item.name} is now active.`;return}b.disabled=true;try{accountProfile=await apiJson('/api/shop/purchase',{method:'POST',body:JSON.stringify({itemId:b.dataset.buy})});renderShop()}catch(e){$('#shopStatus').textContent=e.message;b.disabled=false}});
+  }catch(e){if(tab==='shop')$('#view').innerHTML=`<section class="card"><b>Shop unavailable</b><p>${esc(e.message)}</p></section>`}
+}
 function renderSettings(){
-  $('#view').innerHTML=`<h2>Settings</h2><p class="sub">Make the arcade feel like yours.</p><section class="card"><div class="top"><b>Color themes</b><span>${esc(pk)}</span></div><div class="palette-grid">${Object.entries(palettes).map(([k,v])=>`<button class="palette-dot ${pk===k?'sel':''}" data-palette="${k}" title="${k}" aria-label="${k} theme" style="background:linear-gradient(135deg,${v[3]},${v[4]})"></button>`).join('')}</div></section><section class="card"><div class="top"><div><b>Game sounds</b><div class="sub" style="margin:3px 0 0">Button and game effects</div></div><button class="btn ${muted?'ghost':''}" id="soundSetting">${muted?'Muted':'On'}</button></div></section><section class="card"><div class="top"><div><b>Account</b><div class="sub" style="margin:3px 0 0">Signed in as ${esc(myName||'Player')}</div></div><button class="btn ghost" id="settingsLogout">Log out</button></div></section>`;
+  $('#view').innerHTML=`<h2>Settings</h2><p class="sub">Make the arcade feel like yours.</p><section class="card"><div class="top"><b>Color themes</b><span>${esc(pk)}</span></div><div class="palette-grid">${Object.entries(palettes).filter(([k])=>!['neon','ocean','sunset'].includes(k)||(accountProfile.ownedItems||[]).includes(k)).map(([k,v])=>`<button class="palette-dot ${pk===k?'sel':''}" data-palette="${k}" title="${k}" aria-label="${k} theme" style="background:linear-gradient(135deg,${v[3]},${v[4]})"></button>`).join('')}</div><small style="color:var(--mute)">Unlock extra themes in the coin shop.</small></section><section class="card"><div class="top"><div><b>Game sounds</b><div class="sub" style="margin:3px 0 0">Button and game effects</div></div><button class="btn ${muted?'ghost':''}" id="soundSetting">${muted?'Muted':'On'}</button></div></section><section class="card"><div class="top"><div><b>Account</b><div class="sub" style="margin:3px 0 0">Signed in as ${esc(myName||'Player')}</div></div><button class="btn ghost" id="settingsLogout">Log out</button></div></section>`;
   $('#view').querySelectorAll('[data-palette]').forEach(b=>b.onclick=()=>{pk=b.dataset.palette;applyPalette(pk);renderSettings()});
   $('#soundSetting').onclick=()=>{$('#snd').click();renderSettings()};$('#settingsLogout').onclick=()=>{localStorage.removeItem('ah_token');localStorage.removeItem('ah_id');localStorage.removeItem('ah_name');location.reload()};
 }
 function renderDetail(){
   const G=GAMES.find(g=>g.id===sel),u=st(sel).lv||1;
-  $('#view').innerHTML=`<div class="hero"><div class="pic">${pic(sel)}</div><h2>${G.n}</h2><p>${G.d}. ${G.h}</p><button class="btn big2" id="play">▶ Play level ${LV}</button></div><div class="card"><b>Levels</b><div class="lvs">${Array.from({length:MAX_LEVEL},(_,i)=>{const n=i+1;return`<button class="lv ${n===LV?'on':''} ${n>u?'lock':''}" data-n="${n}">${n>u?'🔒':n<u?'⭐':n}</button>`}).join('')}</div></div><div class="card"><b>🏆 Top scores</b>${gameLB(sel,10)}</div>`;
+  $('#view').innerHTML=`<div class="hero"><div class="pic">${pic(sel)}</div><h2>${G.n}</h2><p>${G.d}. ${G.h}</p><button class="btn big2" id="play">▶ Play level ${LV}</button>${['ttt','rps'].includes(sel)?'<p><button class="btn ghost" id="onlinePlay">👥 Play online with a friend</button></p>':''}</div><div class="card"><b>Levels</b><div class="lvs">${Array.from({length:MAX_LEVEL},(_,i)=>{const n=i+1;return`<button class="lv ${n===LV?'on':''} ${n>u?'lock':''}" data-n="${n}">${n>u?'🔒':n<u?'⭐':n}</button>`}).join('')}</div></div><div class="card"><b>🏆 Top scores</b>${gameLB(sel,10)}</div>`;
   $('#play').onclick=()=>{playing=sel;startGame(sel)};
+  if($('#onlinePlay'))$('#onlinePlay').onclick=()=>{const game=sel;tab='online';openOnlineRoom(game)};
   if(G.tool){$('#view').querySelectorAll('.card').forEach(x=>x.remove());$('#play').textContent='▶ Open'}
   $('#view').querySelectorAll('.lv').forEach(b=>b.onclick=()=>{if(+b.dataset.n<=u){LV=+b.dataset.n;renderDetail()}});
 }
@@ -389,6 +435,80 @@ function renderFollow(){
   $('#view').innerHTML=`<div class="social-grid"><div class="card feature-card"><div class="top"><b>People</b><span>${Object.keys(a).length} accounts</span></div>${rows.slice(0,50).map((r,i)=>`<div class="profile-row" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="avatar">${esc((nm(r.id)[0]||'P').toUpperCase())}</span><div style="flex:1"><b>${esc(nm(r.id))}</b><div style="font-size:12px;color:var(--mute)">${r.f} followers · ${r.w} wins</div></div>${r.id===myId?'You':`<button class="btn sm ${me.following.includes(r.id)?'ghost':''}" data-f="${r.id}">${me.following.includes(r.id)?'Following':'Follow'}</button>`}</div>`).join('')}</div><div class="card feature-card"><b>Your following</b><p style="color:var(--mute)">${me.following.length} people</p><div class="empty-art">Follow players from the list to build your arcade circle.</div></div></div>`;
   $('#view').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>toggleFollow(b.dataset.f));
 }
+function renderOnline(){
+  if(roomPoll){clearInterval(roomPoll);roomPoll=null}
+  if(activeRoomCode){renderOnlineRoom();return}
+  $('#view').innerHTML=`<h2>Play with a friend</h2><p class="sub">Start a private room, send the six-letter code, and play from different devices.</p><section class="card"><b>Create an invite room</b><p class="sub">Online mode is ready for Tic-Tac-Toe and Rock-Paper-Scissors.</p><div class="online-form"><select id="roomGame" aria-label="Choose an online game"><option value="ttt">Tic-Tac-Toe</option><option value="rps">Rock-Paper-Scissors</option></select><button class="btn" id="createRoom">Create room</button></div></section><section class="card"><b>Join a friend's room</b><p class="sub">Ask your friend for their six-character room code.</p><div class="online-form"><input id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC234" aria-label="Room code"><button class="btn" id="joinRoom">Join room</button></div><div id="onlineStatus" class="online-status" aria-live="polite"></div></section><section class="card"><b>How it works</b><p>Both players need an Arcade account and must open the same hosted Arcade site. Rooms sync through the server, so you can play from different places.</p></section>`;
+  $('#joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'')};
+  $('#createRoom').onclick=()=>openOnlineRoom($('#roomGame').value);
+  $('#joinRoom').onclick=()=>joinOnlineRoom($('#joinCode').value);
+}
+async function openOnlineRoom(game){
+  const status=$('#onlineStatus');if(status)status.textContent='Creating your invite room…';
+  try{const room=await apiJson('/api/rooms',{method:'POST',body:JSON.stringify({game})});activeRoomCode=room.code;render()}
+  catch(e){if(status)status.textContent=e.message;else{tab='online';activeRoomCode='';render();$('#onlineStatus').textContent=e.message}}
+}
+async function joinOnlineRoom(code){
+  const status=$('#onlineStatus');if(!code||code.length!==6){status.textContent='Enter the six-character room code.';return}
+  status.textContent='Joining room…';
+  try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}/join`,{method:'POST',body:'{}'});activeRoomCode=room.code;render()}
+  catch(e){status.textContent=e.message}
+}
+function renderOnlineRoom(){
+  const code=activeRoomCode;
+  $('#view').innerHTML=`<section class="card"><div class="top"><div><b>Invite room</b><div class="room-code">${esc(code)}</div></div><button class="btn ghost" id="leaveRoom">Leave room</button></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="copyRoom">Copy code</button><span id="roomStatus" class="online-status" style="flex:1;text-align:left">Connecting to the room…</span></div><div id="roomContent"></div></section>`;
+  const content=$('#roomContent');
+  const paint=room=>{
+    if(tab!=='online'||activeRoomCode!==code||!document.body.contains(content))return;
+    const opponent=room.role==='host'?room.guestName:room.hostName;
+    let html='';
+    if(room.status==='waiting')html=`<div class="empty-art">Waiting for a friend to join. Share code <b>${esc(room.code)}</b>.</div>`;
+    else if(room.game==='ttt'){
+      const mark=room.role==='host'?'X':'O',canMove=room.status==='playing'&&room.turn===room.role;
+      const message=room.status==='complete'?(room.draw?'Draw game.':room.winner===room.role?'You won! 🎉':'Your friend won this round.'):`${esc(opponent||'Your friend')} joined · ${canMove?'Your turn':'Waiting for your friend'}`;
+      html=`<p class="online-status">${message}</p><div class="online-board">${room.board.map((v,i)=>`<button data-room-cell="${i}" aria-label="Square ${i+1}" ${!canMove||v?'disabled':''}>${esc(v||'')}</button>`).join('')}</div><p class="online-status">You are ${mark}. ${room.status==='complete'?'':`Room ${esc(room.code)} stays open while you play.`}</p>`;
+    }else{
+      const hands={rock:'🪨 Rock',paper:'📄 Paper',scissors:'✂️ Scissors'},result=room.lastResult;
+      const score=`${room.scores?.[room.role]||0} – ${room.scores?.[room.role==='host'?'guest':'host']||0}`;
+      let message=room.status==='complete'?(room.winner===room.role?'You won the match! 🎉':'Your friend won the match.'):`Round ${room.round} · You ${score} · first to 3`;
+      if(result)message+=` · ${hands[result.host]} vs ${hands[result.guest]}${result.winner==='draw'?' — draw':result.winner===room.role?' — you score!':' — friend scores'}`;
+      else if(room.myPick)message+=room.opponentReady?' · Revealing picks…':' · Pick locked in; waiting for your friend';
+      html=`<p class="online-status">${message}</p>${room.status==='playing'&&!result&&!room.myPick?`<div class="row">${Object.entries(hands).map(([choice,label])=>`<button class="btn" data-room-choice="${choice}">${label}</button>`).join('')}</div>`:''}${result&&room.status==='playing'?'<div class="row"><button class="btn" id="nextRoomRound">Next round</button></div>':''}`;
+    }
+    content.innerHTML=html;
+    if(room.game==='ttt')content.querySelectorAll('[data-room-cell]').forEach(b=>b.onclick=()=>sendRoomMove(code,{index:+b.dataset.roomCell}));
+    content.querySelectorAll('[data-room-choice]').forEach(b=>b.onclick=()=>sendRoomMove(code,{choice:b.dataset.roomChoice}));
+    const next=$('#nextRoomRound');if(next)next.onclick=()=>sendRoomMove(code,{action:'next'});
+    $('#roomStatus').textContent=room.status==='waiting'?'Waiting for your friend…':room.status==='complete'?'Match finished.':'Connected with '+(opponent||'your friend')+'.';
+  };
+  const load=async()=>{try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);paint(room)}catch(e){if(tab==='online'&&activeRoomCode===code&&$('#roomStatus'))$('#roomStatus').textContent=e.message}};
+  const copy=$('#copyRoom');copy.onclick=async()=>{try{await navigator.clipboard.writeText(code);$('#roomStatus').textContent='Room code copied.'}catch(e){$('#roomStatus').textContent='Share this room code: '+code}};
+  $('#leaveRoom').onclick=()=>{activeRoomCode='';if(roomPoll){clearInterval(roomPoll);roomPoll=null}render()};
+  load();roomPoll=setInterval(load,1800);
+}
+async function sendRoomMove(code,move){
+  try{await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify(move)});const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);if(activeRoomCode===code){const status=$('#roomStatus');if(status)status.textContent=room.status==='complete'?'Match finished.':'Move sent.';renderOnlineRoomContentRefresh(room)}}
+  catch(e){const status=$('#roomStatus');if(status)status.textContent=e.message}
+}
+function renderOnlineRoomContentRefresh(room){
+  // Repaint the current game state without resetting the invite controls or polling timer.
+  const code=activeRoomCode,content=$('#roomContent');if(!content||!room)return;
+  const opponent=room.role==='host'?room.guestName:room.hostName;
+  if(room.status==='waiting'){content.innerHTML=`<div class="empty-art">Waiting for a friend to join. Share code <b>${esc(room.code)}</b>.</div>`;return}
+  if(room.game==='ttt'){
+    const mark=room.role==='host'?'X':'O',canMove=room.status==='playing'&&room.turn===room.role;
+    const message=room.status==='complete'?(room.draw?'Draw game.':room.winner===room.role?'You won! 🎉':'Your friend won this round.'):`${esc(opponent||'Your friend')} joined · ${canMove?'Your turn':'Waiting for your friend'}`;
+    content.innerHTML=`<p class="online-status">${message}</p><div class="online-board">${room.board.map((v,i)=>`<button data-room-cell="${i}" aria-label="Square ${i+1}" ${!canMove||v?'disabled':''}>${esc(v||'')}</button>`).join('')}</div><p class="online-status">You are ${mark}. ${room.status==='complete'?'':`Room ${esc(code)} stays open while you play.`}</p>`;
+    content.querySelectorAll('[data-room-cell]').forEach(b=>b.onclick=()=>sendRoomMove(code,{index:+b.dataset.roomCell}));return;
+  }
+  const hands={rock:'🪨 Rock',paper:'📄 Paper',scissors:'✂️ Scissors'},result=room.lastResult,score=`${room.scores?.[room.role]||0} – ${room.scores?.[room.role==='host'?'guest':'host']||0}`;
+  let message=room.status==='complete'?(room.winner===room.role?'You won the match! 🎉':'Your friend won the match.'):`Round ${room.round} · You ${score} · first to 3`;
+  if(result)message+=` · ${hands[result.host]} vs ${hands[result.guest]}${result.winner==='draw'?' — draw':result.winner===room.role?' — you score!':' — friend scores'}`;
+  else if(room.myPick)message+=room.opponentReady?' · Revealing picks…':' · Pick locked in; waiting for your friend';
+  content.innerHTML=`<p class="online-status">${message}</p>${room.status==='playing'&&!result&&!room.myPick?`<div class="row">${Object.entries(hands).map(([choice,label])=>`<button class="btn" data-room-choice="${choice}">${label}</button>`).join('')}</div>`:''}${result&&room.status==='playing'?'<div class="row"><button class="btn" id="nextRoomRound">Next round</button></div>':''}`;
+  content.querySelectorAll('[data-room-choice]').forEach(b=>b.onclick=()=>sendRoomMove(code,{choice:b.dataset.roomChoice}));
+  const next=$('#nextRoomRound');if(next)next.onclick=()=>sendRoomMove(code,{action:'next'});
+}
 async function renderChat(){
   const API=window.ARCADE_API||'';
   let mode='global',peer='',people=[],request=0;
@@ -407,11 +527,12 @@ async function renderChat(){
     const path=mode==='global'?'/api/chat':peer?`/api/direct/${encodeURIComponent(peer)}`:'';
     if(!path){log.innerHTML='<div class="empty-art">Choose a player to start a personal chat.</div>';return}
     try{
-      const response=await fetch(API+path,{headers:mode==='global'?{}:{Authorization:'Bearer '+token()}});
+      const response=await fetch(API+path,{cache:'no-store',headers:mode==='global'?{}:{Authorization:'Bearer '+token()}});
       const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load messages.');
       if(seq!==request||!view.contains(log))return;
+      const nearBottom=log.scrollHeight-log.scrollTop-log.clientHeight<48;
       const messages=data.messages||[];log.innerHTML=messages.length?messages.map(m=>`<div class="bubble ${m.senderId===myId||m.id===myId?'me':''}"><b>${esc(m.name)}</b><div>${esc(m.text)}</div></div>`).join(''):'<div class="empty-art">'+(mode==='global'?'No messages yet. Start the conversation.':'No messages yet. Say hello!')+'</div>';
-      log.scrollTop=log.scrollHeight;
+      if(nearBottom)log.scrollTop=log.scrollHeight;$('#chatStatus').textContent='';
     }catch(e){if(seq===request&&view.contains(log))$('#chatStatus').textContent=e.message||'Chat is temporarily unavailable.'}
   }
   $('#chatInput').oninput=saveDraft;
@@ -437,7 +558,7 @@ async function renderChat(){
     people=rows.filter(p=>p.id!==myId).map(p=>({id:p.id,name:p.data?.name||p.data?.username||'Player'}));
     $('#chatPeer').innerHTML='<option value="">Choose a player</option>'+people.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   }catch(e){$('#chatStatus').textContent='Could not load players.'}
-  const poll=setInterval(()=>{if(!$('#chatlog'))clearInterval(poll);else load()},5000);
+  const poll=setInterval(()=>{if(!$('#chatlog'))clearInterval(poll);else load()},2200);
 }
 
 function fit(){
@@ -1319,43 +1440,47 @@ function slide(){
 }
 /* Photo Booth */
 function photo(){
-  frame('photo','<div class="booth-layout"><section class="booth-capture"><div class="camera booth-viewer" id="boothViewer"><video id="cam" autoplay playsinline></video><img id="photoSource" alt="Selected photo"><canvas id="photoCanvas"></canvas><div id="photoEmpty" class="booth-empty">Your portrait booth</div><div id="liveSticker" class="live-sticker"></div><div id="countdown" class="countdown" aria-live="polite"></div></div><div class="booth-actions"><button class="btn" id="startCam">Enable camera</button><label class="btn ghost upload-btn">Choose image<input id="pickImg" type="file" accept="image/*"></label><button class="btn" id="startStrip" disabled>Take four photos</button></div><p id="boothStatus" class="booth-status">Allow camera access, then start your strip.</p><canvas id="photoCanvas" hidden></canvas></section><section class="booth-editor"><div class="editor-section"><b>Live look</b><div class="photo-tools" id="filters"></div></div><div class="editor-section"><b>Stickers</b><div class="photo-tools" id="stickers"></div></div><div class="editor-section caption-tools"><label for="stripCaption">Strip caption</label><input id="stripCaption" maxlength="48" placeholder="A little moment" value="ARCADE PHOTO CLUB"><label for="captionFont">Font</label><select id="captionFont"><option value="Fredoka">Playful</option><option value="Quicksand">Clean</option><option value="Georgia">Classic</option><option value="cursive">Handwritten</option></select><label for="stripColor">Strip colour</label><input id="stripColor" type="color" value="#fff5fb" aria-label="Choose strip colour"></div><div class="strip-heading"><b>Your photo strip</b><span id="shotCount">0 / 4</span></div><div id="strip" class="strip"></div><div class="booth-actions"><button class="btn" id="downloadStrip" disabled>Download strip</button><button class="btn ghost" id="clearStrip" disabled>New strip</button></div></section></div>');
+  frame('photo','<div class="booth-layout"><section class="booth-capture"><div class="camera booth-viewer" id="boothViewer"><video id="cam" autoplay playsinline></video><img id="photoSource" alt="Selected photo"><canvas id="photoCanvas"></canvas><div id="photoEmpty" class="booth-empty">Your portrait booth</div><div id="liveSticker" class="live-sticker"></div><div id="countdown" class="countdown" aria-live="polite"></div></div><div class="booth-actions"><button class="btn" id="startCam">Enable camera</button><label class="btn ghost upload-btn">Choose image<input id="pickImg" type="file" accept="image/*"></label><button class="btn" id="startStrip" disabled>Take four photos</button></div><p id="boothStatus" class="booth-status">Allow camera access, then start your strip.</p><canvas id="photoCanvas" hidden></canvas></section><section class="booth-editor"><div class="editor-section"><b>Look filters</b><div class="photo-tools" id="filters"></div></div><div class="editor-section"><b>Face filters & overlays</b><div class="photo-tools" id="stickers"></div></div><div class="editor-section caption-tools"><label for="stripCaption">Strip caption</label><input id="stripCaption" maxlength="48" placeholder="A little moment" value="ARCADE PHOTO CLUB"><label for="captionFont">Font</label><select id="captionFont"><option value="Fredoka">Playful</option><option value="Quicksand">Clean</option><option value="Georgia">Classic</option><option value="cursive">Handwritten</option></select><label for="stripColor">Strip colour</label><input id="stripColor" type="color" value="#fff5fb" aria-label="Choose strip colour"></div><div class="strip-heading"><b>Your photo strip</b><span id="shotCount">0 / 4</span></div><div id="strip" class="strip"></div><div class="booth-actions"><button class="btn" id="downloadStrip" disabled>Download strip</button><button class="btn ghost" id="clearStrip" disabled>New strip</button></div></section></div>');
   const v=$('#cam'),source=$('#photoSource'),viewer=$('#boothViewer'),cv=$('#photoCanvas'),ctx=cv.getContext('2d');let stream=null,filter='soft',sticker='bunny',shots=[],busy=false;
-  const filters={soft:'Candy glow',warm:'Sunset',mono:'Soft mono',dream:'Dreamy haze',vivid:'Neon pop',normal:'Natural'};
-  const looks={soft:'brightness(1.08) contrast(1.06) saturate(1.22)',warm:'sepia(.18) saturate(1.38) hue-rotate(-18deg)',mono:'grayscale(1) contrast(1.1)',dream:'brightness(1.1) saturate(.8) hue-rotate(14deg)',vivid:'saturate(1.45) contrast(1.08) brightness(1.12)',normal:'none'};
+  const filters={soft:'Candy glow',warm:'Sunset',mono:'Soft mono',dream:'Dreamy haze',vivid:'Neon pop',fog:'Misty fog',cool:'Blue hour',normal:'Natural'};
+  const looks={soft:'brightness(1.08) contrast(1.06) saturate(1.22)',warm:'sepia(.18) saturate(1.38) hue-rotate(-18deg)',mono:'grayscale(1) contrast(1.1)',dream:'brightness(1.1) saturate(.8) hue-rotate(14deg)',vivid:'saturate(1.45) contrast(1.08) brightness(1.12)',fog:'brightness(1.12) contrast(.9) saturate(.72)',cool:'saturate(.9) hue-rotate(18deg) brightness(1.05)',normal:'none'};
   const stickerSet=[
     {id:'bunny',label:'Bunny',emoji:'🐰',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M38 34c-18 0-29 11-29 25 0 15 11 26 24 28-6 10-8 18-8 18h18c0-8 3-16 11-18l-8 18h17l-8-18c8 2 11 10 11 18h18s-2-8-8-18c13-2 24-13 24-28 0-14-11-25-29-25-10 0-18 5-23 12-5-7-13-12-23-12z" fill="#f8d5e3"/><path d="M20 60c-4-11-4-20 10-25" stroke="#ff6ca9" stroke-width="6" stroke-linecap="round"/><path d="M100 60c4-11 4-20-10-25" stroke="#ff6ca9" stroke-width="6" stroke-linecap="round"/><circle cx="48" cy="56" r="5" fill="#2a1837"/><circle cx="72" cy="56" r="5" fill="#2a1837"/><path d="M56 72c5 6 11 6 16 0" stroke="#2a1837" stroke-width="5" stroke-linecap="round"/></svg>'},
     {id:'cat',label:'Cat',emoji:'🐱',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M28 42l-18 20 18 10 12-17 12 17 18-10-18-20-12 10-12-10zm49 0l18 20-18 10-12-17-12 17-18-10 18-20 12 10 12-10z" fill="#ffcb75"/><path d="M32 40l-14-18 16 2 8 15zm56 0l14-18-16 2-8 15zm-30 18c-14 0-24 11-24 24 0 13 10 20 24 20s24-7 24-20c0-13-10-24-24-24z" fill="#ffe3ac"/><circle cx="48" cy="64" r="4" fill="#2a1837"/><circle cx="72" cy="64" r="4" fill="#2a1837"/><path d="M52 80c8 7 16 7 24 0" stroke="#2a1837" stroke-width="4" stroke-linecap="round"/><path d="M48 18l8-15 8 15" fill="#ff8bb6"/></svg>'},
+    {id:'dog',label:'Dog',emoji:'🐶',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M31 38Q10 24 14 57q2 16 20 19M89 38q21-14 17 19-2 16-20 19" fill="#b97945" stroke="#80502e" stroke-width="5"/><circle cx="60" cy="61" r="39" fill="#f1c792"/><circle cx="46" cy="55" r="4" fill="#2a1837"/><circle cx="74" cy="55" r="4" fill="#2a1837"/><ellipse cx="60" cy="72" rx="12" ry="9" fill="#47353a"/><path d="M60 81q-8 11-17 2m17-2q8 11 17 2" fill="none" stroke="#47353a" stroke-width="4" stroke-linecap="round"/></svg>'},
     {id:'flower',label:'Bloom',emoji:'🌸',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><g fill="#ff5fa7"><circle cx="60" cy="24" r="14"/><circle cx="60" cy="96" r="14"/><circle cx="24" cy="60" r="14"/><circle cx="96" cy="60" r="14"/><circle cx="35" cy="35" r="13"/><circle cx="85" cy="35" r="13"/><circle cx="35" cy="85" r="13"/><circle cx="85" cy="85" r="13"/></g><circle cx="60" cy="60" r="18" fill="#ffd96e"/><path d="M60 22v76M22 60h76" stroke="#96e2ab" stroke-width="4" stroke-linecap="round"/></svg>'},
     {id:'star',label:'Spark',emoji:'✨',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 16l13 28 31 4-22 22 5 32-27-15-27 15 5-32-22-22 31-4 13-28z" fill="#ffd75a" stroke="#fff0ab" stroke-width="4"/><path d="M40 44l20 19 19-19" stroke="#fff8d6" stroke-width="5" stroke-linecap="round" fill="none"/></svg>'},
     {id:'heart',label:'Heart',emoji:'💖',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 97c-2 0-4-1-6-3L28 70c-9-9-9-23 0-32 9-9 23-9 32 0l0 0 0 0c9-9 23-9 32 0 9 9 9 23 0 32l-26 24c-2 2-4 3-6 3z" fill="#ff6aa5"/><path d="M45 42c-9 0-18 5-18 17 0 10 8 17 18 20" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"/></svg>'},
-    {id:'bow',label:'Bow',emoji:'🎀',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M36 60c0-18 14-32 32-32s32 14 32 32-14 32-32 32-32-14-32-32zm17 0c0 12 8 20 15 20 7 0 15-8 15-20 0-12-8-20-15-20-7 0-15 8-15 20zm17-1c-6 0-11 5-11 10 0 5 5 9 11 9s11-4 11-9c0-5-5-10-11-10z" fill="#8d6dff"/><path d="M60 20v34" stroke="#ff9bc4" stroke-width="6" stroke-linecap="round"/><path d="M60 93v15" stroke="#ff9bc4" stroke-width="6" stroke-linecap="round"/></svg>'}
+    {id:'bow',label:'Bow',emoji:'🎀',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M36 60c0-18 14-32 32-32s32 14 32 32-14 32-32 32-32-14-32-32zm17 0c0 12 8 20 15 20 7 0 15-8 15-20 0-12-8-20-15-20-7 0-15 8-15 20zm17-1c-6 0-11 5-11 10 0 5 5 9 11 9s11-4 11-9c0-5-5-10-11-10z" fill="#8d6dff"/><path d="M60 20v34" stroke="#ff9bc4" stroke-width="6" stroke-linecap="round"/><path d="M60 93v15" stroke="#ff9bc4" stroke-width="6" stroke-linecap="round"/></svg>'},
+    {id:'writing',label:'Writing',emoji:'✍️',svg:''}
   ];
   const stickerSvg=id=> (stickerSet.find(s=>s.id===id) || stickerSet[0]).svg;
   const css=()=>looks[filter]||'none';
   const paintControls=()=>{
     $('#filters').innerHTML=Object.entries(filters).map(([k,n])=>`<button class="filter-chip ${k===filter?'on':''}" data-filter="${k}">${n}</button>`).join('');
     $('#stickers').innerHTML=`<button class="filter-chip ${!sticker?'on':''}" data-sticker="">None</button>`+stickerSet.map(x=>`<button class="filter-chip sticker-choice ${x.id===sticker?'on':''}" data-sticker="${x.id}" aria-label="${x.label} sticker">${x.emoji} ${x.label}</button>`).join('');
-    $('#liveSticker').innerHTML=sticker?stickerSvg(sticker):'';
-    $('#filters').querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;paintControls();v.style.filter=css();source.style.filter=css();renderStrip()});
+    $('#liveSticker').innerHTML=sticker==='writing'?`<span class="live-writing">${esc($('#stripCaption').value.trim()||'Your caption')}</span>`:sticker?stickerSvg(sticker):'';
+    viewer.dataset.filter=filter;
+    $('#filters').querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;paintControls();viewer.dataset.filter=filter;v.style.filter=css();source.style.filter=css();renderStrip()});
     $('#stickers').querySelectorAll('[data-sticker]').forEach(b=>b.onclick=()=>{sticker=b.dataset.sticker||'';paintControls();renderStrip()});
   };
   function renderStrip(){
     $('#shotCount').textContent=`${shots.length} / 4`;
     const selectedSticker=stickerSet.find(item=>item.id===sticker);
     $('#strip').style.backgroundColor=$('#stripColor').value;
-    $('#strip').innerHTML=shots.length?shots.map((shot,i)=>`<div class="strip-photo"><img src="${shot}" alt="Photo ${i+1}" style="filter:${css()}">${selectedSticker?`<span class="strip-sticker">${selectedSticker.svg}</span><span class="strip-emoji" aria-hidden="true">${selectedSticker.emoji}</span>`:''}<span class="frame-number">0${i+1}</span></div>`).join(''):'<div class="strip-placeholder">Four portrait frames will appear here.</div>';
+    const overlay=sticker==='writing'?`<span class="strip-sticker"><span class="photo-writing">${esc($('#stripCaption').value.trim()||'Your caption')}</span></span>`:selectedSticker?`<span class="strip-sticker">${selectedSticker.svg}</span><span class="strip-emoji" aria-hidden="true">${selectedSticker.emoji}</span>`:'';
+    $('#strip').innerHTML=shots.length?shots.map((shot,i)=>`<div class="strip-photo" data-filter="${filter}"><img src="${shot}" alt="Photo ${i+1}" style="filter:${css()}">${overlay}<span class="frame-number">0${i+1}</span></div>`).join(''):'<div class="strip-placeholder">Four portrait frames will appear here.</div>';
     $('#downloadStrip').disabled=shots.length!==4;$('#clearStrip').disabled=!shots.length;
   }
   $('#startCam').onclick=async()=>{
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});v.srcObject=stream;v.style.display='block';source.style.display='none';$('#photoEmpty').style.display='none';v.style.filter=css();$('#startStrip').disabled=false;$('#boothStatus').textContent='Camera ready. Your four photos will be spaced three seconds apart.'}
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});v.srcObject=stream;v.style.display='block';source.style.display='none';$('#photoEmpty').style.display='none';v.style.filter=css();viewer.dataset.filter=filter;$('#startStrip').disabled=false;$('#boothStatus').textContent='Camera ready. Your four photos will be spaced three seconds apart.'}
     catch(e){$('#boothStatus').textContent='Camera permission was blocked. Choose an image to use the strip editor.'}
   };
   $('#pickImg').onchange=e=>{
     const file=e.target.files[0];if(!file)return;const url=URL.createObjectURL(file);
     source.onload=()=>{source.style.display='block';source.style.filter=css();v.style.display='none';$('#photoEmpty').style.display='none';$('#startStrip').disabled=false;$('#boothStatus').textContent='Image ready. Start a four-frame strip from this portrait.'};source.src=url;
   };
-  $('#stripCaption').oninput=()=>{};$('#stripColor').oninput=renderStrip;
+  $('#stripCaption').oninput=()=>{if(sticker==='writing')paintControls();renderStrip()};$('#stripColor').oninput=renderStrip;
   $('#startStrip').onclick=async()=>{
     if(busy||(!stream&&!source.naturalWidth))return;busy=true;shots=[];renderStrip();$('#startStrip').disabled=true;
     for(let index=0;index<4;index++){
@@ -1375,7 +1500,7 @@ function photo(){
   };
   $('#clearStrip').onclick=()=>{if(busy)return;shots=[];renderStrip();$('#boothStatus').textContent='Ready for another four-photo session.'};
   $('#downloadStrip').onclick=async()=>{
-    if(shots.length!==4)return;const selectedSticker=stickerSet.find(item=>item.id===sticker),stickerImage=selectedSticker?new Image():null;if(stickerImage){stickerImage.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(selectedSticker.svg);try{await stickerImage.decode()}catch(e){}}const paperColor=$('#stripColor').value,rgb=paperColor.slice(1).match(/.{2}/g).map(value=>parseInt(value,16)),textColor=rgb[0]*.299+rgb[1]*.587+rgb[2]*.114>145?'#263329':'#fff',canvas=document.createElement('canvas'),c=canvas.getContext('2d'),width=640,pad=24,frameH=790,gap=14,header=112,footer=100;
+    if(shots.length!==4)return;const selectedSticker=stickerSet.find(item=>item.id===sticker),stickerImage=selectedSticker?.svg?new Image():null;if(stickerImage){stickerImage.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(selectedSticker.svg);try{await stickerImage.decode()}catch(e){}}const paperColor=$('#stripColor').value,rgb=paperColor.slice(1).match(/.{2}/g).map(value=>parseInt(value,16)),textColor=rgb[0]*.299+rgb[1]*.587+rgb[2]*.114>145?'#263329':'#fff',canvas=document.createElement('canvas'),c=canvas.getContext('2d'),width=640,pad=24,frameH=790,gap=14,header=112,footer=100;
     canvas.width=width;canvas.height=header+pad*2+frameH*4+gap*3+footer;c.fillStyle=paperColor;c.fillRect(0,0,canvas.width,canvas.height);
     c.fillStyle=textColor;c.textAlign='center';c.font=`700 34px "${$('#captionFont').value}",sans-serif`;c.fillText($('#stripCaption').value.trim()||'PHOTO CLUB',width/2,69,600);
     for(let i=0;i<4;i++){
@@ -1383,7 +1508,9 @@ function photo(){
       c.fillStyle=paperColor;c.fillRect(x-4,y-4,fw+8,frameH+8);const im=new Image();im.src=shots[i];await im.decode();
       const scale=Math.max(fw/im.width,frameH/im.height),sw=fw/scale,sh=frameH/scale,sx=(im.width-sw)/2,sy=(im.height-sh)/2;
       c.save();c.beginPath();c.rect(x,y,fw,frameH);c.clip();c.filter=css();c.drawImage(im,sx,sy,sw,sh,x,y,fw,frameH);c.filter='none';
-      if(selectedSticker){if(stickerImage&&stickerImage.complete&&stickerImage.naturalWidth>0)c.drawImage(stickerImage,x+fw*.04,y+frameH*.035,fw*.19,fw*.19);c.textAlign='center';c.font=`${Math.round(fw*.09)}px sans-serif`;c.fillText(selectedSticker.emoji,x+fw*.85,y+frameH*.14)}
+      if(filter==='fog'){const haze=c.createRadialGradient(x+fw*.5,y+frameH*.4,frameH*.06,x+fw*.5,y+frameH*.45,frameH*.75);haze.addColorStop(0,'rgba(255,255,255,.34)');haze.addColorStop(1,'rgba(255,255,255,.03)');c.fillStyle=haze;c.fillRect(x,y,fw,frameH)}
+      if(selectedSticker?.svg&&stickerImage?.complete&&stickerImage.naturalWidth>0){c.drawImage(stickerImage,x+fw*.04,y+frameH*.035,fw*.19,fw*.19);c.textAlign='center';c.font=`${Math.round(fw*.09)}px sans-serif`;c.fillText(selectedSticker.emoji,x+fw*.85,y+frameH*.14)}
+      if(sticker==='writing'){c.fillStyle='#fffdf0';c.globalAlpha=.92;c.fillRect(x+fw*.1,y+frameH*.08,fw*.8,56);c.globalAlpha=1;c.fillStyle='#263329';c.textAlign='center';c.font=`700 28px "${$('#captionFont').value}",sans-serif`;c.fillText($('#stripCaption').value.trim()||'Your caption',x+fw/2,y+frameH*.08+38,fw*.74)}
       c.restore();
     }
     c.fillStyle=textColor;c.textAlign='center';c.font='600 16px Quicksand,sans-serif';c.fillText('ARCADE HUB  ·  PHOTO BOOTH',width/2,canvas.height-36);
@@ -1666,6 +1793,7 @@ const palettes={
   rose:['#fff5fb','#fffefc','#2b143d','#ff5fa7','#8d6dff','#f7d7ef'],
   lavender:['#f6f0ff','#fffdfd','#2c1a4d','#8a6cf5','#52b6ff','#e3d7ff'],
   sky:['#edfaff','#fffdfd','#243547','#49c6ff','#7b70ff','#cfefff'],
+  neon:['#171325','#221c38','#f9ecff','#e555f2','#62d8ff','#3e3357'],
   mint:['#eefef9','#fffdfd','#173d43','#2ed3b1','#5fa7ff','#d6fce9'],
   peach:['#fff4ee','#fffdfd','#412938','#ff8daf','#ffb15e','#ffd9d0'],
   lemon:['#fff9dc','#fffdfd','#382d1e','#ffca5d','#ff7bbd','#f2e3a8'],
@@ -1676,7 +1804,8 @@ const palettes={
   coral:['#fff2ef','#fffdfd','#3d2534','#ff6f7d','#ff8dc6','#fddcd6'],
   citrus:['#fff8db','#fffdfd','#352f1d','#ffb048','#ff5fa7','#f9e7b4'],
   ink:['#eef2ff','#fffdfd','#2a2d43','#7d7ef0','#4dd4ff','#dfe4ff'],
-  midnight:['#171929','#1f2436','#f5f8ff','#ff6bb0','#5ac7ff','#2d3552']
+  midnight:['#171929','#1f2436','#f5f8ff','#ff6bb0','#5ac7ff','#2d3552'],
+  sunset:['#fff1e6','#fffaf5','#472c3e','#ff704c','#f4ae42','#ffd9c6']
 };
 const pop=document.createElement('div');pop.className='palette-pop';pop.innerHTML='<div class="palette-title">Choose your arcade colors</div><div class="palette-grid">'+Object.keys(palettes).map(k=>`<button class="palette-dot" data-pal="${k}" title="${k}" aria-label="${k}"></button>`).join('')+'</div><div class="soft-toggle"><button data-soft="1">Soft</button><button data-soft="0">Bright</button></div>';document.body.appendChild(pop);
 function applyPalette(k,save=true){const v=palettes[k]||palettes.rose,r=document.documentElement;r.style.setProperty('--bg',v[0]);r.style.setProperty('--card',v[1]);r.style.setProperty('--ink',v[2]);r.style.setProperty('--acc',v[3]);r.style.setProperty('--acc2',v[4]);r.style.setProperty('--line',v[5]);r.style.setProperty('--accent-soft',v[5]);r.style.setProperty('--accent-soft2',v[4]);if(k==='night')r.dataset.theme='dark';else r.dataset.theme='light';pop.querySelectorAll('.palette-dot').forEach(x=>{const q=palettes[x.dataset.pal];x.style.background=`linear-gradient(145deg,${q[3]},${q[4]})`;x.classList.toggle('sel',x.dataset.pal===k)});if(save)try{localStorage.setItem('ah_palette',k)}catch(e){}}
@@ -1691,6 +1820,7 @@ render();gate();
     else db=await standaloneDb();
     if(user){try{myId=await user.id()}catch(e){}try{const v=await user.me();if(!myName)myName=(v&&v.name)||''}catch(e){}}
     restoreLocalStats();
+    if(myId!=='local')await loadAccountProfile();
     if(!db||myId==='local'){db=null;render();return}
     db.collection('players').onSnapshot(s=>{
       players={};s.docs.forEach(d=>{players[d.id]=d.data()});
