@@ -11,7 +11,7 @@ const SHOP_ITEMS=[
   {id:'ocean',name:'Ocean Arcade Theme',description:'A cool blue-green look for your games.',price:70,type:'theme'},
   {id:'sunset',name:'Sunset Arcade Theme',description:'Warm peach and coral colors for your arcade.',price:70,type:'theme'}
 ];
-const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch']);
+const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop']);
 let local = {};
 try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};
@@ -30,7 +30,7 @@ const hashPin=(pin,salt)=>crypto.pbkdf2Sync(String(pin),salt,120000,32,'sha256')
 const id=()=> 'u_'+crypto.randomBytes(9).toString('base64url');
 const token=uid=>{const payload=Buffer.from(JSON.stringify({id:uid,exp:Date.now()+365*24*60*60*1000})).toString('base64url');const signature=crypto.createHmac('sha256',SESSION_SECRET).update(payload).digest('base64url');return payload+'.'+signature};
 function json(res,code,data){res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data))}
-function body(req,cb){let b='';req.on('data',c=>{b+=c;if(b.length>150000)req.destroy()});req.on('end',()=>{try{cb(JSON.parse(b||'{}'))}catch(e){json(req.res,400,{error:'Invalid JSON'})}})}
+function body(req,cb){let b='';req.on('data',c=>{b+=c;if(b.length>250000)req.destroy()});req.on('end',()=>{try{cb(JSON.parse(b||'{}'))}catch(e){json(req.res,400,{error:'Invalid JSON'})}})}
 function saveLocal(){return fs.promises.writeFile(FILE,JSON.stringify(local,null,2))}
 async function sb(pathname,opts={}){const r=await fetch(SB_URL+'/rest/v1/'+pathname,{...opts,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json',...(opts.headers||{})}});const text=await r.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!r.ok)throw new Error((data&&data.message)||text||('Supabase '+r.status));return data}
 async function sbUserByName(name){const q=encodeURIComponent(normalizeName(name));const a=await sb('arcade_users?select=*&username_normalized=eq.'+q+'&limit=1');return a[0]||null}
@@ -114,18 +114,19 @@ async function purchaseItem(uid,itemId){
 }
 const ROOM_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const roomCode=()=>Array.from({length:6},()=>ROOM_ALPHABET[crypto.randomInt(ROOM_ALPHABET.length)]).join('');
-function newRoomState(game){return game==='ttt'?{board:Array(9).fill(null),turn:'host',winner:null,draw:false}:{round:1,scores:{host:0,guest:0},picks:{},lastResult:null}}
+function newRoomState(game){if(game==='booth')return{shots:{host:[],guest:[]}};return game==='ttt'?{board:Array(9).fill(null),turn:'host',winner:null,draw:false}:{round:1,scores:{host:0,guest:0},picks:{},lastResult:null}}
 async function getRoom(code){
  if(durable){const rows=await sb('arcade_rooms?select=*&room_code=eq.'+encodeURIComponent(code)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Room not found. Check the code and try again.'),{code:404});return rows[0]}
  const room=local.rooms[code];if(!room)throw Object.assign(new Error('Room not found. Check the code and try again.'),{code:404});return room;
 }
 function roomView(room,uid){
  const role=uid===room.host_id?'host':'guest',opponent=role==='host'?'guest':'host',state=room.state||{};
+ if(room.game==='booth'){const sh=state.shots||{};return {code:room.room_code,game:'booth',status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,counts:{host:(sh.host||[]).length,guest:(sh.guest||[]).length}}}
  if(room.game==='ttt')return {code:room.room_code,game:room.game,status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,board:state.board||Array(9).fill(null),turn:state.turn,winner:state.winner,draw:!!state.draw};
  return {code:room.room_code,game:room.game,status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,round:state.round||1,scores:state.scores||{host:0,guest:0},myPick:(state.picks||{})[role]||null,opponentReady:!!(state.picks||{})[opponent],lastResult:state.lastResult||null,winner:state.winner||null};
 }
 async function createRoom(uid,game){
- if(!['ttt','rps'].includes(game))throw Object.assign(new Error('Online play is available for Tic-Tac-Toe and Rock-Paper-Scissors.'),{code:400});
+ if(!['ttt','rps','booth'].includes(game))throw Object.assign(new Error('Online play is available for Tic-Tac-Toe, Rock-Paper-Scissors and Photo Booth.'),{code:400});
  const u=await getAccount(uid),name=u.username||u.name||'Player';let code,room;
  for(let i=0;i<4;i++){code=roomCode();try{await getRoom(code)}catch(e){if(e.code===404)break;throw e}}
  room={room_code:code,game,host_id:uid,host_name:name,guest_id:null,guest_name:null,status:'waiting',state:newRoomState(game),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
@@ -155,6 +156,15 @@ async function recordOnlineResult(room,winnerId,draw){
 async function roomMove(uid,room,move){
  const role=roomRole(room,uid);if(room.status!=='playing')throw Object.assign(new Error('This room is not accepting moves.'),{code:409});
  const state={...(room.state||{})};
+ if(room.game==='booth'){
+  let current=room;
+  for(let i=0;i<3;i++){
+   const sh=(current.state&&current.state.shots)||{},shots={host:[...(sh.host||[])],guest:[...(sh.guest||[])]};
+   if(move.action==='clear')shots[role]=[];
+   else{const img=String(move.image||'');if(!/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(img)||img.length>160000)throw Object.assign(new Error('That photo could not be used. Please try again.'),{code:400});if(shots[role].length>=4)throw Object.assign(new Error('You already have four photos. Tap Retake to start over.'),{code:409});shots[role].push(img)}
+   try{return roomView(await saveRoom(current,{state:{...(current.state||{}),shots}}),uid)}catch(e){if(e.code!==409||i===2)throw e;current=await getRoom(current.room_code)}
+  }
+ }
  if(room.game==='ttt'){
   const index=Number(move.index),board=Array.isArray(state.board)?state.board.slice():Array(9).fill(null);
   if(state.turn!==role)throw Object.assign(new Error('Wait for your turn.'),{code:409});
@@ -199,7 +209,7 @@ async function directPost(uid,other,text){
 const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp'};
  http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
  try{
-  if(u.pathname==='/api/status'&&req.method==='GET')return json(res,200,{ok:true,durable,provider:durable?'supabase':'local'});
+  if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.coins':'arcade_users?select=coins&limit=1','users.login_streak':'arcade_users?select=login_streak&limit=1','users.daily':'arcade_users?select=daily&limit=1','users.owned_items':'arcade_users?select=owned_items&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
   if(u.pathname==='/api/players'&&req.method==='GET')return json(res,200,await getPlayers());
   if(u.pathname==='/api/register'&&req.method==='POST')return body(req,async d=>{try{const name=String(d.name||'').trim().replace(/\s+/g,' '),pin=String(d.pin||'');if(!validName(name))return json(res,400,{error:'Username must be 2-16 characters and use letters, numbers, spaces, _ or -.'});if(!validPin(pin))return json(res,400,{error:'PIN must be 4-8 digits.'});const v=await register(name,pin);json(res,201,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||500,{error:e.message||'Could not create account.'})}});
   if(u.pathname==='/api/login'&&req.method==='POST')return body(req,async d=>{try{const v=await login(String(d.name||'').trim(),String(d.pin||''));json(res,200,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||401,{error:e.message})}});
@@ -213,8 +223,9 @@ const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png'
    if(u.pathname==='/api/shop'&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await getAccount(uid);return json(res,200,{items:SHOP_ITEMS,profile:profileView(u)})}catch(e){return json(res,e.code||500,{error:e.message})}}
    if(u.pathname==='/api/shop/purchase'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await purchaseItem(uid,String(d.itemId||''));json(res,200,profileView(u))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/rooms'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in to create an invite room.'});try{json(res,201,await createRoom(uid,String(d.game||'')))}catch(e){json(res,e.code||500,{error:e.message})}});
-   const roomMatch=u.pathname.match(/^\/api\/rooms\/([A-HJ-NP-Z2-9]{6})(?:\/(join|move))?$/);
+   const roomMatch=u.pathname.match(/^\/api\/rooms\/([A-HJ-NP-Z2-9]{6})(?:\/(join|move|shots))?$/);
    if(roomMatch){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in to join online games.'});const code=roomMatch[1].toUpperCase();try{
+    if(req.method==='GET'&&roomMatch[2]==='shots'){const room=await getRoom(code);roomRole(room,uid);const sh=(room.state&&room.state.shots)||{};return json(res,200,{shots:{host:sh.host||[],guest:sh.guest||[]}})}
     if(req.method==='GET'&&!roomMatch[2]){const room=await getRoom(code);roomRole(room,uid);return json(res,200,roomView(room,uid))}
     if(req.method==='POST'&&roomMatch[2]==='join')return body(req,async()=>{try{json(res,200,await joinRoom(uid,code))}catch(e){json(res,e.code||500,{error:e.message})}});
     if(req.method==='POST'&&roomMatch[2]==='move')return body(req,async d=>{try{const room=await getRoom(code);roomRole(room,uid);json(res,200,d.action==='next'?await nextRoomRound(uid,room):await roomMove(uid,room,d))}catch(e){json(res,e.code||500,{error:e.message})}});
