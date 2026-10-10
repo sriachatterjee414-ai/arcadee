@@ -143,6 +143,9 @@ async function joinRoom(uid,code){
  if(room.status!=='waiting'||room.guest_id)throw Object.assign(new Error('That room already has two players.'),{code:409});
  const u=await getAccount(uid);return roomView(await saveRoom(room,{guest_id:uid,guest_name:u.username||u.name||'Player',status:'playing'}),uid);
 }
+const SIGNALS=new Map();
+function sigBox(code){let b=SIGNALS.get(code);if(!b){b={host:[],guest:[],t:0};SIGNALS.set(code,b)}b.t=Date.now();return b}
+setInterval(()=>{const now=Date.now();for(const [k,v] of SIGNALS)if(now-v.t>3600000)SIGNALS.delete(k)},600000).unref();
 function roomRole(room,uid){if(uid===room.host_id)return'host';if(uid===room.guest_id)return'guest';throw Object.assign(new Error('You are not a player in this room.'),{code:403})}
 async function recordOnlineResult(room,winnerId,draw){
  for(const uid of [room.host_id,room.guest_id]){
@@ -223,8 +226,12 @@ const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png'
    if(u.pathname==='/api/shop'&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await getAccount(uid);return json(res,200,{items:SHOP_ITEMS,profile:profileView(u)})}catch(e){return json(res,e.code||500,{error:e.message})}}
    if(u.pathname==='/api/shop/purchase'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await purchaseItem(uid,String(d.itemId||''));json(res,200,profileView(u))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/rooms'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in to create an invite room.'});try{json(res,201,await createRoom(uid,String(d.game||'')))}catch(e){json(res,e.code||500,{error:e.message})}});
-   const roomMatch=u.pathname.match(/^\/api\/rooms\/([A-HJ-NP-Z2-9]{6})(?:\/(join|move|shots))?$/);
+   if(u.pathname==='/api/rtc-config'&&req.method==='GET'){if(!sessionId(req))return json(res,401,{error:'Please log in.'});const ice=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];if(process.env.TURN_URL)ice.push({urls:process.env.TURN_URL.split(',').map(x=>x.trim()),username:process.env.TURN_USERNAME||'',credential:process.env.TURN_CREDENTIAL||''});return json(res,200,{iceServers:ice})}
+   const roomMatch=u.pathname.match(/^\/api\/rooms\/([A-HJ-NP-Z2-9]{6})(?:\/(join|move|shots|signal))?$/);
    if(roomMatch){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in to join online games.'});const code=roomMatch[1].toUpperCase();try{
+    if(roomMatch[2]==='signal'){const room=await getRoom(code);const role=roomRole(room,uid),other=role==='host'?'guest':'host',box=sigBox(code);
+     if(req.method==='GET'){const out=box[role];box[role]=[];return json(res,200,{messages:out})}
+     if(req.method==='POST')return body(req,async d=>{const raw=JSON.stringify(d.data||{});if(raw.length>20000)return json(res,400,{error:'Signal too large.'});box[other].push({data:d.data});if(box[other].length>300)box[other].splice(0,box[other].length-300);json(res,200,{ok:true})})}
     if(req.method==='GET'&&roomMatch[2]==='shots'){const room=await getRoom(code);roomRole(room,uid);const sh=(room.state&&room.state.shots)||{};return json(res,200,{shots:{host:sh.host||[],guest:sh.guest||[]}})}
     if(req.method==='GET'&&!roomMatch[2]){const room=await getRoom(code);roomRole(room,uid);return json(res,200,roomView(room,uid))}
     if(req.method==='POST'&&roomMatch[2]==='join')return body(req,async()=>{try{json(res,200,await joinRoom(uid,code))}catch(e){json(res,e.code||500,{error:e.message})}});
