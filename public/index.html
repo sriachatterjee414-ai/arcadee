@@ -228,7 +228,7 @@ main{max-width:1280px;padding:26px 34px 108px}.app h1,.app h1:first-letter,.app 
 .strip-photo .strip-sticker:has(.photo-writing){width:80%}
 .strip-photo .strip-sticker svg{width:100%!important;height:auto}
 .strip-photo .strip-emoji{display:none!important}
-.booth-viewer[data-filter="vintage"]::after,.booth-viewer[data-filter="film"]::after,.strip-photo[data-filter="vintage"]::after,.strip-photo[data-filter="film"]::after,.grainy[data-filter="vintage"]::after,.grainy[data-filter="film"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 55%,rgba(40,25,10,.45) 100%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .2 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:multiply;opacity:.6}
+.booth-viewer[data-filter="vintage"]::after,.booth-viewer[data-filter="film"]::after,.strip-photo[data-filter="vintage"]::after,.strip-photo[data-filter="film"]::after,.grainy[data-filter="vintage"]::after,.grainy[data-filter="film"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at center,transparent 55%,rgba(40,25,10,.28) 100%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .25 0 0 0 0 .2 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:multiply;opacity:.28}
 .strip-photo[data-filter="vintage"],.strip-photo[data-filter="film"]{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
 </style>
 </head>
@@ -319,6 +319,12 @@ PIC.mystery='<circle cx="42" cy="44" r="22" fill="none" stroke="#5b1a3a" stroke-
 PIC.bubble='<circle cx="30" cy="28" r="14" fill="#ff4d6d"/><circle cx="58" cy="28" r="14" fill="#ffb703"/><circle cx="44" cy="52" r="14" fill="#3ddc84"/><circle cx="72" cy="52" r="14" fill="#4cc9f0"/><circle cx="50" cy="82" r="10" fill="#b388ff"/><circle cx="26" cy="23" r="4" fill="#fff" opacity=".6"/>';
 PIC.race='<rect x="22" y="0" width="56" height="100" fill="#3b3b4f"/><path d="M50 4v14M50 40v14M50 76v14" stroke="#fff" stroke-width="3"/><rect x="34" y="52" width="22" height="38" rx="6" fill="#ff4d94"/><rect x="38" y="60" width="14" height="10" rx="2" fill="#cfefff"/><rect x="60" y="12" width="14" height="26" rx="5" fill="#ffd400"/>';
 PIC.cook='<ellipse cx="50" cy="34" rx="34" ry="18" fill="#e3a14d"/><rect x="16" y="46" width="68" height="8" rx="4" fill="#4caf50"/><rect x="16" y="54" width="68" height="10" rx="5" fill="#7b3f1d"/><rect x="20" y="64" width="60" height="7" rx="3" fill="#ffc107"/><ellipse cx="50" cy="78" rx="34" ry="12" fill="#e3a14d"/>';
+PIC.mines='<circle cx="48" cy="56" r="26" fill="#2a2438"/><path d="M48 30V20M62 36l8-8M20 56h-6M82 56h-6M28 36l-5-5M68 76l5 5M28 76l-5 5" stroke="#2a2438" stroke-width="5" stroke-linecap="round"/><circle cx="73" cy="22" r="6" fill="#ffb703"/><circle cx="40" cy="48" r="7" fill="#fff" opacity=".35"/>';
+PIC.c4='<rect x="10" y="14" width="80" height="72" rx="10" fill="#2a4fd6"/><circle cx="28" cy="34" r="9" fill="#eaf0ff"/><circle cx="50" cy="34" r="9" fill="#eaf0ff"/><circle cx="72" cy="34" r="9" fill="#ff4d6d"/><circle cx="28" cy="52" r="9" fill="#ff4d6d"/><circle cx="50" cy="52" r="9" fill="#ffd400"/><circle cx="72" cy="52" r="9" fill="#ffd400"/><circle cx="28" cy="70" r="9" fill="#ffd400"/><circle cx="50" cy="70" r="9" fill="#ff4d6d"/><circle cx="72" cy="70" r="9" fill="#ff4d6d"/>';
+PIC.hangman='<path d="M16 88h42M30 88V14h36v14" stroke="#6d4c41" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="66" cy="38" r="8" fill="none" stroke="#2a1837" stroke-width="4"/><path d="M66 46v20M66 52l-9 9M66 52l9 9M66 66l-8 14M66 66l8 14" stroke="#2a1837" stroke-width="4" stroke-linecap="round" fill="none"/>';
+PIC.hilo='<rect x="12" y="26" width="38" height="54" rx="6" fill="#fff" transform="rotate(-12 31 53)"/><rect x="48" y="20" width="38" height="54" rx="6" fill="#fff" stroke="#d9d2e2" transform="rotate(10 67 47)"/><text x="54" y="56" font-size="28" font-weight="900" fill="#d32f2f">♥</text><text x="18" y="62" font-size="28" font-weight="900" fill="#241437" transform="rotate(-12 31 53)">♠</text><path d="M22 18l-8 10h16zM78 86l-8-10h16z" fill="#3ddc84"/>';
+PIC.stroop='<path d="M50 12C28 12 12 28 12 50s16 38 38 38c9 0 11-7 7-13-4-6 0-12 8-12h13c8 0 14-6 14-14C92 28 74 12 50 12z" fill="#f3e3c8" stroke="#a1662f" stroke-width="3"/><circle cx="34" cy="38" r="8" fill="#e53935"/><circle cx="54" cy="30" r="8" fill="#fdd835"/><circle cx="72" cy="42" r="8" fill="#43a047"/><circle cx="30" cy="60" r="8" fill="#1e88e5"/>';
+Object.assign(BG,{mines:'#ffd6a5',c4:'#cfe0ff',hangman:'#e6f4c8',hilo:'#ffd9e6',stroop:'#d9e8ff'});
 const pic=id=>`<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="${BG[id]||'#ffb3d1'}"/>${PIC[id]||''}</svg>`;
 const TYPES=['Strategy','Luck','Memory','Reflex','Brain','Skill','Puzzle','Word','Cooking','Mystery','Rhythm','Sports','Cats','Creative'];
 const MAX_LEVEL=30;
@@ -455,7 +461,7 @@ function renderFollow(){
   $('#view').innerHTML=`<div class="social-grid"><div class="card feature-card"><div class="top"><b>People</b><span>${Object.keys(a).length} accounts</span></div>${rows.slice(0,50).map((r,i)=>`<div class="profile-row" style="padding:10px 0;border-bottom:1px solid var(--line)"><span class="avatar">${esc((nm(r.id)[0]||'P').toUpperCase())}</span><div style="flex:1"><b>${esc(nm(r.id))}</b><div style="font-size:12px;color:var(--mute)">${r.f} followers · ${r.w} wins</div></div>${r.id===myId?'You':`<button class="btn sm ${me.following.includes(r.id)?'ghost':''}" data-f="${r.id}">${me.following.includes(r.id)?'Following':'Follow'}</button>`}</div>`).join('')}</div><div class="card feature-card"><b>Your following</b><p style="color:var(--mute)">${me.following.length} people</p><div class="empty-art">Follow players from the list to build your arcade circle.</div></div></div>`;
   $('#view').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>toggleFollow(b.dataset.f));
 }
-/* ---- Photo Booth shared helpers + Multiplayer Photo Booth ---- */
+/* ---- Photo Booth shared helpers + Live Multiplayer Photo Booth ---- */
 const BOOTH_NEW_STICKERS=[
  {id:'lollipop',label:'Lollipop',emoji:'🍭',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 62L38 114" stroke="#f3e9d8" stroke-width="8" stroke-linecap="round"/><circle cx="62" cy="44" r="34" fill="#ff5f9e"/><path d="M62 44a4 4 0 1 1 4 4a10 10 0 1 1-10-10a16 16 0 1 1 16 16a22 22 0 1 1-22-22a28 28 0 1 1 28 28" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>'},
  {id:'cherry',label:'Cherry',emoji:'🍒',svg:'<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M42 82Q50 30 82 14M82 86Q84 44 82 14" stroke="#3d8b4d" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="40" cy="88" r="22" fill="#d6194b"/><circle cx="82" cy="90" r="22" fill="#e8264f"/><circle cx="33" cy="80" r="6" fill="#ff8aa6" opacity=".8"/><circle cx="75" cy="82" r="6" fill="#ff8aa6" opacity=".8"/></svg>'},
@@ -463,61 +469,131 @@ const BOOTH_NEW_STICKERS=[
  {id:'stache',label:'Mustache',emoji:'🥸',svg:'<svg viewBox="0 0 140 70" aria-hidden="true"><path d="M70 26c-10-14-36-16-58-2 8 26 36 30 58 8 22 22 50 18 58-8-22-14-48-12-58 2z" fill="#3a2418"/></svg>'},
  {id:'crown',label:'Crown',emoji:'👑',svg:'<svg viewBox="0 0 120 90" aria-hidden="true"><path d="M10 78L18 20l28 28 14-34 14 34 28-28 8 58z" fill="#ffd24d" stroke="#d9a21b" stroke-width="4" stroke-linejoin="round"/><circle cx="18" cy="18" r="6" fill="#ff5fa7"/><circle cx="60" cy="12" r="6" fill="#8d6dff"/><circle cx="102" cy="18" r="6" fill="#ff5fa7"/></svg>'}
 ];
+/* Gentle film grain + soft vignette (amount is 0..1, keep it small) */
 function boothGrain(ctx,x,y,w,h,amount){
-  const g=document.createElement('canvas');g.width=Math.ceil(w/2);g.height=Math.ceil(h/2);
-  const gc=g.getContext('2d'),id=gc.createImageData(g.width,g.height);
+  const gw=Math.ceil(w),gh=Math.ceil(h),g=document.createElement('canvas');g.width=gw;g.height=gh;
+  const gc=g.getContext('2d'),id=gc.createImageData(gw,gh);
   for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.round(amount*255)}
   gc.putImageData(id,0,0);
   ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
-  const vg=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*.3,x+w/2,y+h/2,Math.max(w,h)*.7);
-  vg.addColorStop(0,'rgba(40,25,10,0)');vg.addColorStop(1,'rgba(40,25,10,.45)');ctx.fillStyle=vg;ctx.fillRect(x,y,w,h);
-  ctx.globalCompositeOperation='overlay';ctx.imageSmoothingEnabled=false;ctx.drawImage(g,x,y,w,h);
+  const vg=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*.35,x+w/2,y+h/2,Math.max(w,h)*.75);
+  vg.addColorStop(0,'rgba(40,25,10,0)');vg.addColorStop(1,'rgba(40,25,10,.28)');ctx.fillStyle=vg;ctx.fillRect(x,y,w,h);
+  ctx.globalCompositeOperation='overlay';ctx.drawImage(g,x,y,w,h);
   ctx.restore();
 }
-const booth={stream:null,key:'',shots:{host:[],guest:[]},room:null,filter:'vintage',sticker:'lollipop',pos:{x:50,y:72},busy:false,loading:false};
+const booth={stream:null,pc:null,dc:null,sigTimer:null,polling:false,code:'',localReady:false,remoteReady:false,pending:null,iceQ:[],remoteLook:null,key:'',shots:{host:[],guest:[]},room:null,filter:'vintage',sticker:'lollipop',pos:{x:50,y:72},busy:false,loading:false,lastLook:0};
 const BOOTH_FILTERS={vintage:'sepia(.9) contrast(1.18) brightness(1.03) saturate(.85)',film:'grayscale(1) contrast(1.3) brightness(1.06) sepia(.12)',none:'none',warm:'sepia(.35) saturate(1.3) brightness(1.05)',soft:'brightness(1.1) contrast(.92) saturate(1.1)'};
 const boothVintage=()=>booth.filter==='vintage'||booth.filter==='film';
-function stopBooth(){if(booth.stream){booth.stream.getTracks().forEach(t=>t.stop());booth.stream=null}}
+const boothOpp=()=>{const r=booth.room;return r?((r.role==='host'?r.guestName:r.hostName)||'Your friend'):'Your friend'};
+const boothDCOpen=()=>!!(booth.dc&&booth.dc.readyState==='open');
+let boothRtcCfg=null;
+const boothConn=t=>{const e=$('#bmConn');if(e)e.textContent=t};
+const boothSend=data=>apiJson(`/api/rooms/${encodeURIComponent(booth.code)}/signal`,{method:'POST',body:JSON.stringify({data})}).catch(()=>{});
+async function boothIce(){if(boothRtcCfg)return boothRtcCfg;try{const d=await apiJson('/api/rtc-config');boothRtcCfg=d.iceServers}catch(e){boothRtcCfg=[{urls:'stun:stun.l.google.com:19302'}]}return boothRtcCfg}
+function boothClosePeer(){
+  try{booth.dc&&booth.dc.close()}catch(e){}try{booth.pc&&booth.pc.close()}catch(e){}
+  booth.pc=null;booth.dc=null;booth.iceQ=[];
+  const rv=$('#bmRVideo');if(rv){rv.srcObject=null;rv.style.display='none'}const re=$('#bmREmpty');if(re)re.style.display='grid';
+}
+function stopBooth(){
+  clearInterval(booth.sigTimer);booth.sigTimer=null;boothClosePeer();
+  if(booth.stream){booth.stream.getTracks().forEach(t=>t.stop());booth.stream=null}
+  booth.localReady=false;booth.remoteReady=false;booth.pending=null;booth.remoteLook=null;booth.busy=false;booth.polling=false;
+}
+async function boothPeer(){
+  boothClosePeer();
+  const pc=new RTCPeerConnection({iceServers:await boothIce()});booth.pc=pc;
+  booth.stream.getTracks().forEach(t=>pc.addTrack(t,booth.stream));
+  pc.onicecandidate=e=>{if(e.candidate)boothSend({type:'ice',c:e.candidate.toJSON()})};
+  pc.ontrack=e=>{const rv=$('#bmRVideo');if(!rv)return;rv.srcObject=e.streams[0];rv.style.display='block';$('#bmREmpty').style.display='none';rv.play&&rv.play().catch(()=>{})};
+  pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='connected')boothConn('🎥 Live with '+boothOpp()+'! Tap “Snap together”.');else if(s==='connecting')boothConn('Connecting video…');else if(s==='failed')boothConn('Video could not connect on this network. You can still take photos and they will sync.');boothUpdate()};
+  pc.ondatachannel=e=>boothDC(e.channel);
+  return pc;
+}
+function boothDC(dc){
+  booth.dc=dc;
+  dc.onopen=()=>{boothSendLook();boothUpdate()};dc.onclose=()=>boothUpdate();
+  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}if(m.t==='snap')boothRun();if(m.t==='look'){booth.remoteLook=m;boothRemoteLook()}};
+}
+function boothSendLook(){if(boothDCOpen())booth.dc.send(JSON.stringify({t:'look',filter:booth.filter,sticker:booth.sticker,pos:booth.pos}))}
+function boothStickerSvg(el,id){const s=BOOTH_NEW_STICKERS.find(x=>x.id===id);el.innerHTML=s?s.svg:'';const svg=el.querySelector('svg');if(svg){svg.style.width='100%';svg.style.height='auto';svg.style.display='block';svg.style.filter='drop-shadow(0 2px 5px rgba(0,0,0,.4))'}}
+function boothRemoteLook(){
+  const l=booth.remoteLook,rv=$('#bmRVideo'),rf=$('#bmRFrame'),rl=$('#bmRLive');if(!l||!rv||!rf||!rl)return;
+  rv.style.filter=BOOTH_FILTERS[l.filter]||'none';rf.dataset.filter=l.filter;boothStickerSvg(rl,l.sticker);rl.style.left=l.pos.x+'%';rl.style.top=l.pos.y+'%';
+}
+async function boothFlush(){const q=booth.iceQ;booth.iceQ=[];for(const c of q)try{await booth.pc.addIceCandidate(c)}catch(e){}}
+async function boothOffer(){
+  if(!booth.stream||!booth.remoteReady||!booth.room||booth.room.role!=='host')return;
+  const pc=await boothPeer();boothDC(pc.createDataChannel('booth'));
+  const o=await pc.createOffer();await pc.setLocalDescription(o);
+  boothConn('Connecting video…');boothSend({type:'offer',sdp:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});
+}
+async function boothAnswer(d){
+  const pc=await boothPeer();await pc.setRemoteDescription(d.sdp);await boothFlush();
+  const a=await pc.createAnswer();await pc.setLocalDescription(a);
+  boothSend({type:'answer',sdp:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});
+}
+async function boothSignal(m){
+  const d=m.data||{};
+  if(d.type==='ready'){booth.remoteReady=true;if(!booth.stream)boothConn(boothOpp()+' is ready — start your camera.');await boothOffer();return}
+  if(d.type==='offer'){if(!booth.stream){booth.pending=d;boothConn(boothOpp()+' is ready — start your camera to join the video.');return}await boothAnswer(d);return}
+  if(d.type==='answer'&&booth.pc){try{await booth.pc.setRemoteDescription(d.sdp)}catch(e){}await boothFlush();return}
+  if(d.type==='ice'){if(booth.pc&&booth.pc.remoteDescription){try{await booth.pc.addIceCandidate(d.c)}catch(e){}}else booth.iceQ.push(d.c)}
+}
+async function boothPoll(){
+  if(booth.polling||!booth.code)return;booth.polling=true;
+  try{const d=await apiJson(`/api/rooms/${encodeURIComponent(booth.code)}/signal`);for(const m of d.messages||[])await boothSignal(m)}catch(e){}
+  booth.polling=false;
+}
+function boothCount(n){for(const id of ['#bmCount','#bmRCount']){const e=$(id);if(!e)continue;e.style.display=n?'grid':'none';e.textContent=n||''}}
 function boothPaint(room,content,code){
-  booth.room=room;
+  booth.room=room;booth.code=code;
   if(!content.querySelector('#bmRoot')){
-    booth.key='';booth.shots={host:[],guest:[]};
+    stopBooth();booth.code=code;booth.key='';booth.shots={host:[],guest:[]};
+    const tile=(p,label)=>`<div style="flex:1;min-width:0;max-width:250px"><div id="bm${p}Frame" class="grainy" data-filter="${booth.filter}" style="position:relative;width:100%;aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:#241437"><video id="bm${p}Video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;${p===''?'transform:scaleX(-1);':''}display:none"></video><div id="bm${p}Empty" style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-align:center;padding:10px;font-size:13px">${p===''?'📸 Tap “Start camera”':'Waiting for your friend…'}</div><div id="bm${p}Live" style="position:absolute;left:50%;top:72%;transform:translate(-50%,-50%);width:34%;z-index:3;${p===''?'touch-action:none;cursor:grab':'pointer-events:none'}"></div><div id="bm${p}Count" style="position:absolute;inset:0;display:none;place-items:center;color:#fff;font-size:72px;font-weight:900;text-shadow:0 4px 18px rgba(0,0,0,.5);z-index:4;pointer-events:none"></div></div><small id="bm${p}Name" style="display:block;text-align:center;margin-top:4px;font-weight:700">${label}</small></div>`;
     content.innerHTML=`<div id="bmRoot" style="display:grid;gap:12px;justify-items:center">
-      <p class="online-status" id="bmStatus" style="margin:6px 0"></p>
-      <div id="bmFrame" class="grainy" data-filter="${booth.filter}" style="position:relative;width:min(100%,320px);aspect-ratio:3/4;border-radius:6px;overflow:hidden;background:#241437">
-        <video id="bmVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:none"></video>
-        <div id="bmEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-align:center;padding:16px">📸 Tap “Start camera” to join the booth</div>
-        <div id="bmLive" style="position:absolute;left:50%;top:72%;transform:translate(-50%,-50%);width:34%;touch-action:none;cursor:grab;z-index:3"></div>
-        <div id="bmCount" style="position:absolute;inset:0;display:none;place-items:center;color:#fff;font-size:96px;font-weight:900;text-shadow:0 4px 18px rgba(0,0,0,.5);z-index:4;pointer-events:none"></div>
-      </div>
-      <small style="color:var(--mute)">Drag the sticker where you want it.</small>
+      <p class="online-status" id="bmConn" style="margin:6px 0;text-align:center">Start your camera to join the video booth.</p>
+      <div style="display:flex;gap:10px;width:100%;max-width:520px;justify-content:center">${tile('','You')}${tile('R',esc(boothOpp()))}</div>
+      <small style="color:var(--mute)">Drag your sticker where you want it.</small>
       <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
         <button class="btn ghost" id="bmCam">Start camera</button>
         <select id="bmFilter" aria-label="Filter"><option value="vintage">Vintage sepia</option><option value="film">Film B&amp;W</option><option value="none">Normal</option><option value="warm">Warm</option><option value="soft">Soft</option></select>
         <select id="bmSticker" aria-label="Sticker"><option value="">No sticker</option>${BOOTH_NEW_STICKERS.map(s=>`<option value="${s.id}">${s.emoji} ${s.label}</option>`).join('')}</select>
-        <button class="btn" id="bmSnap" disabled>Snap!</button>
       </div>
       <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button class="btn" id="bmSnap" disabled>Snap!</button>
+        <button class="btn ghost sm" id="bmReconnect">Reconnect video</button>
         <button class="btn ghost sm" id="bmClear">Retake mine</button>
         <button class="btn sm" id="bmSave" disabled>Save our photo strip</button>
       </div>
+      <p class="online-status" id="bmStatus" style="margin:0"></p>
       <div id="bmStrips" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px"></div>
     </div>`;
-    const v=$('#bmVideo'),live=$('#bmLive'),frame=$('#bmFrame'),paintLive=()=>{const s=BOOTH_NEW_STICKERS.find(x=>x.id===booth.sticker);live.innerHTML=s?s.svg:'';live.style.left=booth.pos.x+'%';live.style.top=booth.pos.y+'%';const svg=live.querySelector('svg');if(svg){svg.style.width='100%';svg.style.height='auto';svg.style.display='block';svg.style.filter='drop-shadow(0 2px 5px rgba(0,0,0,.4))'}};
-    $('#bmFilter').value=booth.filter;$('#bmSticker').value=booth.sticker;paintLive();
-    $('#bmFilter').onchange=e=>{booth.filter=e.target.value;v.style.filter=BOOTH_FILTERS[booth.filter];frame.dataset.filter=booth.filter};
-    $('#bmSticker').onchange=e=>{booth.sticker=e.target.value;paintLive()};
-    let drag=false;const mv=e=>{const r=frame.getBoundingClientRect();booth.pos.x=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));booth.pos.y=Math.max(8,Math.min(92,(e.clientY-r.top)/r.height*100));live.style.left=booth.pos.x+'%';live.style.top=booth.pos.y+'%'};
+    const v=$('#bmVideo'),live=$('#bmLive'),frame=$('#bmFrame');
+    const place=()=>{live.style.left=booth.pos.x+'%';live.style.top=booth.pos.y+'%'};
+    $('#bmFilter').value=booth.filter;$('#bmSticker').value=booth.sticker;boothStickerSvg(live,booth.sticker);place();
+    $('#bmFilter').onchange=e=>{booth.filter=e.target.value;v.style.filter=BOOTH_FILTERS[booth.filter];frame.dataset.filter=booth.filter;boothSendLook()};
+    $('#bmSticker').onchange=e=>{booth.sticker=e.target.value;boothStickerSvg(live,booth.sticker);boothSendLook()};
+    let drag=false;const mv=e=>{const r=frame.getBoundingClientRect();booth.pos.x=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));booth.pos.y=Math.max(8,Math.min(92,(e.clientY-r.top)/r.height*100));place();const n=Date.now();if(n-booth.lastLook>80){booth.lastLook=n;boothSendLook()}};
     live.onpointerdown=e=>{if(!live.innerHTML)return;drag=true;live.setPointerCapture(e.pointerId);live.style.cursor='grabbing';mv(e)};
-    live.onpointermove=e=>{if(drag)mv(e)};live.onpointerup=live.onpointercancel=()=>{drag=false;live.style.cursor='grab'};
+    live.onpointermove=e=>{if(drag)mv(e)};live.onpointerup=live.onpointercancel=()=>{drag=false;live.style.cursor='grab';boothSendLook()};
     $('#bmCam').onclick=async()=>{
-      try{stopBooth();booth.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:960}},audio:false});v.srcObject=booth.stream;v.style.display='block';v.style.filter=BOOTH_FILTERS[booth.filter];$('#bmEmpty').style.display='none';$('#bmCam').textContent='Camera on';boothUpdate()}
-      catch(e){$('#bmStatus').textContent='Could not open the camera. Allow camera access in your browser settings and try again.'}
+      try{
+        if(booth.stream)booth.stream.getTracks().forEach(t=>t.stop());
+        booth.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:960}},audio:false});
+        v.srcObject=booth.stream;v.style.display='block';v.style.filter=BOOTH_FILTERS[booth.filter];$('#bmEmpty').style.display='none';$('#bmCam').textContent='Camera on';
+        booth.localReady=true;boothConn('Camera on. Waiting for '+boothOpp()+' to start theirs…');boothUpdate();
+        await boothSend({type:'ready'});
+        if(booth.pending){const p=booth.pending;booth.pending=null;await boothAnswer(p)}else await boothOffer();
+      }catch(e){boothConn('Could not open the camera. Allow camera access in your browser settings and try again.')}
     };
-    $('#bmSnap').onclick=()=>boothSnap(code);
+    $('#bmReconnect').onclick=async()=>{boothClosePeer();if(booth.stream){boothConn('Reconnecting…');await boothSend({type:'ready'});await boothOffer()}else boothConn('Start your camera first.')};
+    $('#bmSnap').onclick=()=>{if(booth.busy)return;if(boothDCOpen())booth.dc.send(JSON.stringify({t:'snap'}));boothRun()};
     $('#bmClear').onclick=async()=>{try{await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify({action:'clear'})});booth.shots[booth.room.role]=[];booth.room.counts[booth.room.role]=0;booth.key='';drawBoothStrips()}catch(e){$('#bmStatus').textContent=e.message}};
     $('#bmSave').onclick=boothSave;
+    booth.sigTimer=setInterval(boothPoll,700);boothPoll();
   }
+  const nameEl=$('#bmRName');if(nameEl)nameEl.textContent=boothOpp();
   boothUpdate();
   const key=room.counts.host+'-'+room.counts.guest;
   if(key!==booth.key&&!booth.loading){
@@ -527,9 +603,10 @@ function boothPaint(room,content,code){
 }
 function boothUpdate(){
   const room=booth.room;if(!room||!$('#bmStatus'))return;
-  const me=room.counts[room.role],other=room.counts[room.role==='host'?'guest':'host'],oppName=(room.role==='host'?room.guestName:room.hostName)||'Your friend';
-  if(!booth.busy)$('#bmStatus').textContent=me>=4&&other>=4?'Strip complete! 🎉 Save it below.':`You ${me}/4 · ${oppName} ${other}/4`;
+  const me=room.counts[room.role],other=room.counts[room.role==='host'?'guest':'host'];
+  if(!booth.busy)$('#bmStatus').textContent=me>=4&&other>=4?'Strip complete! 🎉 Save it below.':`You ${me}/4 · ${boothOpp()} ${other}/4`;
   $('#bmSnap').disabled=!booth.stream||me>=4||booth.busy;
+  $('#bmSnap').textContent=boothDCOpen()?'📸 Snap together':'Snap!';
   $('#bmSave').disabled=me+other===0;
 }
 function drawBoothStrips(){
@@ -538,21 +615,21 @@ function drawBoothStrips(){
   el.innerHTML=col('host',room.hostName||'Host')+col('guest',room.guestName||'Guest');
   boothUpdate();
 }
-async function boothSnap(code){
+async function boothRun(){
   const v=$('#bmVideo'),room=booth.room;if(!booth.stream||booth.busy||!room)return;
+  if(room.counts[room.role]>=4){$('#bmStatus').textContent='You already have four photos. Tap Retake to start over.';return}
   booth.busy=true;$('#bmSnap').disabled=true;
-  const cnt=$('#bmCount');cnt.style.display='grid';
-  for(const n of [3,2,1]){cnt.textContent=n;await new Promise(r=>setTimeout(r,800))}
-  cnt.style.display='none';
+  for(const n of [3,2,1]){boothCount(n);await new Promise(r=>setTimeout(r,800))}
+  boothCount(0);
   const W=270,H=360,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const vw=v.videoWidth||W,vh=v.videoHeight||H,scale=Math.max(W/vw,H/vh),sw=W/scale,sh=H/scale,sx=(vw-sw)/2,sy=(vh-sh)/2;
   x.save();x.translate(W,0);x.scale(-1,1);try{x.filter=BOOTH_FILTERS[booth.filter]}catch(e){}x.drawImage(v,sx,sy,sw,sh,0,0,W,H);x.restore();
-  if(boothVintage())boothGrain(x,0,H*0,W,H,.45);
+  if(boothVintage())boothGrain(x,0,0,W,H,.1);
   const st=BOOTH_NEW_STICKERS.find(s=>s.id===booth.sticker);
   if(st){try{const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(st.svg);await im.decode();const sz=W*.34,ar=(im.naturalHeight||1)/(im.naturalWidth||1);x.drawImage(im,W*booth.pos.x/100-sz/2,H*booth.pos.y/100-sz*ar/2,sz,sz*ar)}catch(e){}}
-  const image=c.toDataURL('image/jpeg',.55);
+  const image=c.toDataURL('image/jpeg',.6);
   try{
-    await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify({image})});
+    await apiJson(`/api/rooms/${encodeURIComponent(booth.code)}/move`,{method:'POST',body:JSON.stringify({image})});
     (booth.shots[room.role]=booth.shots[room.role]||[]).push(image);room.counts[room.role]++;drawBoothStrips();
   }catch(e){$('#bmStatus').textContent=e.message}
   booth.busy=false;boothUpdate();
@@ -1651,7 +1728,7 @@ function photo(){
       const scale=Math.max(fw/im.width,frameH/im.height),sw=fw/scale,sh=frameH/scale,sx=(im.width-sw)/2,sy=(im.height-sh)/2;
       c.save();c.beginPath();c.rect(x,y,fw,frameH);c.clip();c.filter=css();c.drawImage(im,sx,sy,sw,sh,x,y,fw,frameH);c.filter='none';
       if(filter==='fog'){const haze=c.createRadialGradient(x+fw*.5,y+frameH*.4,frameH*.06,x+fw*.5,y+frameH*.45,frameH*.75);haze.addColorStop(0,'rgba(255,255,255,.34)');haze.addColorStop(1,'rgba(255,255,255,.03)');c.fillStyle=haze;c.fillRect(x,y,fw,frameH)}
-      if(filter==='vintage'||filter==='film')boothGrain(c,x,y,fw,frameH,.5);
+      if(filter==='vintage'||filter==='film')boothGrain(c,x,y,fw,frameH,.12);
       if(selectedSticker?.svg&&stickerImage?.complete&&stickerImage.naturalWidth>0){{const sz=fw*.34,ar=(stickerImage.naturalHeight||1)/(stickerImage.naturalWidth||1);c.drawImage(stickerImage,x+fw*pos.x/100-sz/2,y+frameH*pos.y/100-sz*ar/2,sz,sz*ar)}}
       if(sticker==='writing'){c.fillStyle='#fffdf0';c.globalAlpha=.92;c.fillRect(x+fw*.1,y+frameH*.08,fw*.8,56);c.globalAlpha=1;c.fillStyle='#263329';c.textAlign='center';c.font=`700 28px "${$('#captionFont').value}",sans-serif`;c.fillText($('#stripCaption').value.trim()||'Your caption',x+fw/2,y+frameH*.08+38,fw*.74)}
       c.restore();
