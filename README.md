@@ -1,6 +1,6 @@
 # Arcade Hub v2
 
-Arcade Hub is a browser arcade with 45 mini-games and two creative tools, account login, shared scores, rankings, followers, chat, responsive layouts, and a camera Photo Booth.
+Arcade Hub is a browser arcade with 46 mini-games and two creative tools, account login, shared scores, rankings, followers, chat, responsive layouts, and a camera Photo Booth.
 
 ## What is included
 - Username + 4-8 digit PIN accounts
@@ -46,7 +46,7 @@ The personal chat view refreshes messages while it is open. Photo capture uses t
 - Lucky box: 30 coins; 80% chance of 10–50 coins, 20% chance of 1–3 diamonds. The shop displays these odds.
 - Snake and Flappy offer one 25-coin revive per run, retaining the score; finishing saves the result and offers Play again or Exit.
 - Tic-Tac-Toe, RPS, Ludo, Chess, Snakes & Ladders, Pong, Candy Breaker and 2048 use scores without level selection. Snake, Flappy and Match 3 retain progression.
-- Photo Booth includes colour filters, draggable bunny/kitty ears, image upload and downloadable strips. All 47 games/tools and chat remain available.
+- Photo Booth includes colour filters, draggable bunny/kitty ears, image upload and downloadable strips. All 48 games/tools and chat remain available.
 
 **Deployment:** The shop works with existing Supabase account tables, including databases without the optional wallet columns. Account extras are stored in a private `_arcade` envelope inside the existing `stats` JSON column; that envelope is removed from public scores. Existing wallet columns and earlier `daily._arcade` data remain readable, and updated values take priority. The full `SUPABASE_SCHEMA.sql` is available for new installations; the shop does not require a manual migration. Without Supabase, set `DATA_FILE` to a persistent disk path for durable local storage.
 
@@ -63,3 +63,9 @@ Game cards and wardrobe previews use original SVG illustrations from `public/cut
 - Leaving or replaying a game cancels its timers, animation callbacks and keyboard listeners. Leaving Photo Booth releases the camera. Background score updates preserve the active screen, typed text and invite controls. Room moves are serialized in the UI and conditional room updates reject conflicting writes.
 
 Checks: `node --test tests/*.cjs` covers economy/storage, old multiplayer modes, Jenga moves and conflicts, chat privacy, the new game reward contracts, and game callback cleanup. Visual and interaction checks use the browser at phone and desktop sizes. Production deployment and a real Supabase connection must be verified separately.
+
+## A toy-box aesthetic and Mochi Café
+
+All 48 games and creative tools share illustrated title badges, soft board materials and rounded controls. Board pieces, matching candies, potion layers, memory cards and rhythm pads have their own toy details. Snake, Bubble Pop, Bird Launch and Turbo Racer include illustrated playfields; Hangman uses a bunny with seven guess balloons. Colour clues remain distinct, and reduced-motion preferences are respected.
+
+**Mochi Café** is a separate cooking game: read an animal customer’s recipe, mix ingredients, brew the drink, choose the pastry, and serve. Incorrect orders cost hearts; complete the shift before closing to unlock the next level. Later shifts introduce more recipes and customers. Scores, coins, daily activities and replay use the existing arcade systems. Brewing and countdown callbacks are cancelled when leaving the café.

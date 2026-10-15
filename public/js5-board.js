@@ -1,7 +1,7 @@
 /* Ludo: classic cross board, 2-4 players */
 function ludo(){ask('ludo',[...OPP,{k:'n',l:'Players',o:[['2','2'],['3','3'],['4','4']]}],o=>ludo2(o.m==='pvp',+o.n))}
 function ludo2(pvp,NP){
-  const COL=['#e5484d','#2fbf71','#f2c200','#3b82f6'],LT=['#ffc9c9','#c3f2d2','#fff3a8','#c4dcff'],NM=['Red','Green','Yellow','Blue'];
+  const COL=['#c86c90','#489c83','#c29b37','#6b91bd'],LT=['#ffc9c9','#c3f2d2','#fff3a8','#c4dcff'],NM=['Red','Green','Yellow','Blue'];
   const P=NP===2?[0,2]:NP===3?[0,1,2]:[0,1,2,3],S=[0,13,26,39],SAFE=[0,13,26,39,8,21,34,47];
   const TR=[],add=(r,c)=>TR.push([r,c]);
   for(let c=1;c<=5;c++)add(6,c);for(let r=5;r>=0;r--)add(r,6);add(0,7);add(0,8);for(let r=1;r<=5;r++)add(r,8);
@@ -23,7 +23,7 @@ function ludo2(pvp,NP){
     const tk=Array.from({length:225},()=>[]);
     T.forEach((a,i)=>a.forEach((p,k)=>{if(p<56){const[r,c]=where(i,k);tk[r*15+c].push([P[i],pend&&i===cur&&pend.includes(k)])}}));
     const stars=SAFE.map(a=>TR[a][0]*15+TR[a][1]);
-    $('#bd').innerHTML=bg.map((c,i)=>c?`<button data-i="${i}" style="aspect-ratio:1;padding:0;border:0;border-radius:3px;background:${c};display:flex;flex-wrap:wrap;align-items:center;justify-content:center;font-size:9px;color:#8e2f5f">${tk[i].map(([pl,h])=>`<span style="width:70%;height:70%;max-width:17px;max-height:17px;border-radius:50%;background:${COL[pl]};border:2px solid ${h?'#000':'#fff'};box-shadow:${h?'0 0 7px #000':'0 1px 2px #0005'}"></span>`).join('')||(stars.includes(i)?'★':'')}</button>`:'<div></div>').join('');
+    $('#bd').innerHTML=bg.map((c,i)=>c?`<button data-i="${i}" style="aspect-ratio:1;padding:0;border:0;border-radius:3px;background:${c};display:flex;flex-wrap:wrap;align-items:center;justify-content:center;font-size:9px;color:#8e2f5f">${tk[i].map(([pl,h])=>`<span class="ludo-pawn" style="width:70%;height:70%;max-width:17px;max-height:17px;border-radius:50%;background:${COL[pl]};border:2px solid ${h?'#000':'#fff'};box-shadow:${h?'0 0 7px #000':'0 1px 2px #0005'}"></span>`).join('')||(stars.includes(i)?'★':'')}</button>`:'<div></div>').join('');
     $('#ct').innerHTML=`<b style="color:${COL[P[cur]]}">${NM[P[cur]]}</b>${dice(roll||1)}<button class="btn" id="rl" ${human(cur)&&!roll&&!pend?'':'disabled'}>Roll</button><span style="font-size:13px;flex-basis:100%;text-align:center">${msg}</span>`;
     $('#rl').onclick=doRoll;
     $('#bd').querySelectorAll('button').forEach(x=>x.onclick=()=>{if(!pend)return;const i=+x.dataset.i,k=pend.find(k=>{const[r,c]=where(cur,k);return r*15+c===i});if(k!==undefined)play(k)});
@@ -64,18 +64,18 @@ function snl2(pvp,NP){
   const L0=[[1,38],[4,14],[9,31],[21,42],[28,84],[36,44],[51,67],[71,91],[80,100]],S0=[[16,6],[47,26],[49,11],[56,53],[62,19],[64,60],[87,24],[93,73],[95,75],[98,78]];
   const lad=Object.fromEntries(L0.slice(0,Math.max(4,9-Math.floor(LV/2)))),snk=Object.fromEntries(S0.slice(0,Math.min(10,3+LV)));
   const C=n=>{const r=(n-1)/10|0;let c=(n-1)%10;if(r%2)c=9-c;return[c*10+5,(9-r)*10+5]};
-  const COL=['#e5484d','#2fbf71','#f2c200','#3b82f6'],pos=Array(NP).fill(0);
+  const COL=['#c86c90','#489c83','#c29b37','#6b91bd'],pos=Array(NP).fill(0);
   let cur=0,roll=0,msg='',turns=0,busy=false;
   frame('snl','<div id="bd"></div><div class="row" id="ct" style="margin-top:8px;align-items:center"></div>');
   const human=i=>pvp||i===0,alive=()=>document.body.contains($('#bd'));
   function paint(){
     let v='<svg viewBox="0 0 100 108" style="width:100%;max-width:360px;display:block;margin:0 auto;border-radius:10px">';
-    for(let n=1;n<=100;n++){const[x,y]=C(n);v+=`<rect x="${x-5}" y="${y-5}" width="10" height="10" fill="${(n+((n-1)/10|0))%2?'#ffe3ef':'#ffc2da'}"/><text x="${x-4.5}" y="${y-2.5}" font-size="2.8" fill="#8e2f5f">${n}</text>`}
+    for(let n=1;n<=100;n++){const[x,y]=C(n);v+=`<rect x="${x-5}" y="${y-5}" width="10" height="10" fill="${(n+((n-1)/10|0))%2?'#fff4df':'#dfebd9'}"/><text x="${x-4.5}" y="${y-2.5}" font-size="2.8" fill="#8e2f5f">${n}</text>`}
     Object.entries(lad).forEach(([a,b])=>{const[x1,y1]=C(+a),[x2,y2]=C(+b);
       v+=`<g stroke="#a1662f" stroke-width=".9"><line x1="${x1-1.3}" y1="${y1}" x2="${x2-1.3}" y2="${y2}"/><line x1="${x1+1.3}" y1="${y1}" x2="${x2+1.3}" y2="${y2}"/></g>`;
       for(let t=.08;t<1;t+=.1){const x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;v+=`<line x1="${x-1.3}" y1="${y}" x2="${x+1.3}" y2="${y}" stroke="#a1662f" stroke-width=".7"/>`}});
     Object.entries(snk).forEach(([a,b])=>{const[x1,y1]=C(+a),[x2,y2]=C(+b);
-      v+=`<path d="M${x1} ${y1}Q${(x1+x2)/2+(a%2?9:-9)} ${(y1+y2)/2} ${x2} ${y2}" stroke="#2fbf71" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="${x1}" cy="${y1}" r="2.2" fill="#1d7a46"/>`});
+      v+=`<path d="M${x1} ${y1}Q${(x1+x2)/2+(a%2?9:-9)} ${(y1+y2)/2} ${x2} ${y2}" stroke="#2fbf71" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="${x1}" cy="${y1}" r="2.2" fill="#78b596"/><circle cx="${x1-.7}" cy="${y1-.5}" r=".35" fill="#513769"/><circle cx="${x1+.7}" cy="${y1-.5}" r=".35" fill="#513769"/>`});
     pos.forEach((p,i)=>{const[x,y]=p?C(p):[8+i*7,104];v+=`<circle cx="${x+(p?i*1.8-2.5:0)}" cy="${y+(p?3:0)}" r="2.6" fill="${COL[i]}" stroke="#fff" stroke-width=".8"/>`});
     $('#bd').innerHTML=v+'</svg>';
     $('#ct').innerHTML=`<b style="color:${COL[cur]}">Player ${cur+1}${!human(cur)?' 🤖':''}</b>${dice(roll||1)}<button class="btn" id="rl" ${human(cur)&&!busy?'':'disabled'}>Roll</button><span style="font-size:13px;flex-basis:100%;text-align:center">${msg}</span>`;
@@ -146,7 +146,7 @@ function mystery(){
 }
 /* Block Drop */
 function tetris(){
-  const W=10,H=16,SH=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]]],CL=['#4cc9f0','#ffd400','#b388ff','#3b82f6','#ff9f1c','#3ddc84','#ff4d6d'];
+  const W=10,H=16,SH=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]]],CL=['#95cbd6','#f5d58e','#c8afe2','#9aadd9','#edb88c','#a6ceb6','#e9a4be'];
   const TG=Math.round(4+LV*1.45),fallMs=Math.max(230,650-LV*14);let bd=Array.from({length:H},()=>Array(W).fill(0)),pc,lines=0,sc=0,done=false;
   frame('tetris','<div class="msg" id="m" style="font-size:15px"></div><div id="tbd" class="tb" style="grid-template-columns:repeat(10,1fr);gap:1px;max-width:300px;background:#0002;padding:2px;border-radius:10px"></div><div class="row" style="margin-top:8px"><button class="btn sm" id="l">◀</button><button class="btn sm" id="ro">⟳</button><button class="btn sm" id="r">▶</button><button class="btn sm" id="d">⬇</button></div>');
   const hit=(s,x,y)=>s.some((row,r)=>row.some((v,c)=>v&&(x+c<0||x+c>=W||y+r>=H||bd[y+r]&&bd[y+r][x+c])));
@@ -155,7 +155,7 @@ function tetris(){
     const v=bd.map(r=>r.slice());
     if(pc&&!done)pc.s.forEach((row,r)=>row.forEach((x,c)=>{if(x&&v[pc.y+r])v[pc.y+r][pc.x+c]=pc.k}));
     $('#m').textContent=`Lines ${lines}/${TG} · Score ${sc}`;
-    $('#tbd').innerHTML=v.flat().map(x=>`<div style="aspect-ratio:1;border-radius:3px;background:${x?CL[x-1]:'var(--card)'}"></div>`).join('');
+    $('#tbd').innerHTML=v.flat().map(x=>`<div class="jelly-pixel ${x?'filled':''}" style="aspect-ratio:1;border-radius:5px;background:${x?CL[x-1]:'var(--card)'}">${x?'<i></i>':''}</div>`).join('');
   };
   function lock(){
     pc.s.forEach((row,r)=>row.forEach((x,c)=>{if(x)bd[pc.y+r][pc.x+c]=pc.k}));
@@ -186,7 +186,7 @@ function water(){
   frame('water','<div class="msg" id="m" style="font-size:15px"></div><div class="row" id="tu" style="gap:10px"></div>');
   const paint=()=>{
     $('#m').textContent=`Moves ${moves}. Drag a tube onto another, or tap both.`;
-    $('#tu').innerHTML=tubes.map((t,i)=>`<div data-t="${i}" style="width:46px;height:154px;border:3px solid var(--acc);border-radius:0 0 23px 23px;display:flex;flex-direction:column-reverse;padding:2px;gap:2px;background:#fff6;touch-action:none;${i===sel?'transform:translateY(-10px);box-shadow:0 0 10px var(--acc2)':''}">${t.map(c=>`<div style="height:34px;border-radius:6px;background:${COL[c]}"></div>`).join('')}</div>`).join('');
+    $('#tu').innerHTML=tubes.map((t,i)=>`<div data-t="${i}" style="width:46px;height:154px;border:3px solid var(--acc);border-radius:0 0 23px 23px;display:flex;flex-direction:column-reverse;padding:2px;gap:2px;background:#fff6;touch-action:none;${i===sel?'transform:translateY(-10px);box-shadow:0 0 10px var(--acc2)':''}">${t.map(c=>`<div class="potion-layer" style="height:34px;border-radius:6px;background:${COL[c]}"><span>${['♥','✦','♣','●','◆','✿','☾','○'][c]}</span></div>`).join('')}</div>`).join('');
   };
   function pour(a,b){
     const A=tubes[a],B=tubes[b];if(a===b||!A.length||B.length>=4)return;

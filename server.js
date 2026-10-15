@@ -20,7 +20,7 @@ SHOP_ITEMS.push(
  {id:'lucky',name:'Lucky Box',price:30,type:'box',description:'80%: 10–50 coins · 20%: 1–3 diamonds. Open again anytime.'}
 );
 // CHANGED: added flappy, breakout, pong, lights (the 4 new games)
-const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop','flappy','breakout','pong','lights','cloudhop','jellystack','startrail','garden']);
+const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop','flappy','breakout','pong','lights','cloudhop','jellystack','startrail','garden','cafe']);
 let local = {};
 try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};

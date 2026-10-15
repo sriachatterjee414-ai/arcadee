@@ -96,10 +96,10 @@ test('online Jenga validates turns, blocks, concurrent moves, collapse and score
  assert.equal((await api('/api/game/reward',{game:'jenga'})).gameReward,0);
 });
 
-test('four new games save scores, reward coins once, and count toward daily tasks',async()=>{
+test('pocket games and café save scores, reward coins once, and count toward daily tasks',async()=>{
  await ready;const player=await api('/api/register',{name:'PocketTester',pin:'123456'});token=player.token;
- const stats={};for(const game of ['cloudhop','jellystack','startrail','garden']){
-  stats[game]={p:1,w:1,pts:200,best:200,lv:['startrail','garden'].includes(game)?2:1};
+ const stats={};for(const game of ['cloudhop','jellystack','startrail','garden','cafe']){
+  stats[game]={p:1,w:1,pts:200,best:200,lv:['startrail','garden','cafe'].includes(game)?2:1};
   assert.equal((await api('/api/players/'+player.id,{stats,following:[]},'PUT')).status,200);
   const reward=await api('/api/game/reward',{game});assert.ok(reward.gameReward>=22);
   assert.equal((await api('/api/game/reward',{game})).gameReward,0);

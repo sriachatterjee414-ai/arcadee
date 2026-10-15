@@ -23,6 +23,7 @@
  const cup=(boba=false)=>`<path d="M53 35h54l-6 61q-21 12-42 0Z" fill="#fffdf8"/><path d="M58 62h44l-4 31q-18 9-36 0Z" fill="${boba?pink:mint}"/><path d="m85 36 12-22" stroke="${lilac}" stroke-width="7"/>${rect(49,30,62,9,lilac,4)}${face(80,67)}${boba?[68,80,91].map((x,i)=>circle(x,91+i%2*3,3.8,ink)).join(''):''}`;
  function scene(id){
   switch(id){
+   case 'cafe':return `${cup(false)}${rect(24,86,36,16,yellow,7)}${heart(116,24,.5)}${face(42,92,.45)}`;
    case 'cloudhop':return `<path d="M26 85q-14-20 7-23 1-23 27-16 19-22 34 2 26-2 24 20 24 6 11 24H30z" fill="#fff"/>${face(77,74,.9)}${star(113,28,.6,yellow)}<path d="M53 47q-5-38 8-32l6 30M79 44q0-37 12-26l-2 32" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
    case 'jellystack':return `${rect(35,81,90,21,mint,8)}${rect(42,57,76,21,pink,8)}${rect(49,33,63,21,lilac,8)}${face(80,66,.7)}${face(81,42,.6)}${star(120,24,.5)}`;
    case 'startrail':return `<path d="M40 82L64 31l47 12-20 49" fill="none" stroke="${lilac}" stroke-width="3"/>${star(40,82,.7,yellow)}${star(64,31,.7,yellow)}${star(111,43,.7,yellow)}${star(91,92,.7,yellow)}${face(64,30,.4)}`;

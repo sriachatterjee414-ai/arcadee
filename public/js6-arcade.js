@@ -205,7 +205,7 @@ function bubble(){
     if(!g.flat().some(v=>v>=0)){clearInterval(t);end('bubble',true,'Board cleared! 🫧🎉',sc+shots*20+LV*50)}
     else if(g.slice(11).flat().some(v=>v>=0)||shots<=0){clearInterval(t);end('bubble',false,shots<=0?'Out of shots.':'The bubbles reached the bottom.',sc)}
   }
-  const orb=(x,y,v,r)=>{c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=COL[v];c.fill();c.beginPath();c.arc(x-r*.3,y-r*.3,r*.3,0,7);c.fillStyle='#fff8';c.fill()};
+  const orb=(x,y,v,r)=>{c.beginPath();c.arc(x,y,r,0,7);c.fillStyle=COL[v];c.fill();c.beginPath();c.arc(x-r*.3,y-r*.3,r*.3,0,7);c.fillStyle='#fff8';c.fill();sweetFace(c,x,y,r*.7)};
   let aim=null;
   const aimAt=e=>{const b=cv.getBoundingClientRect();let dx=(e.clientX-b.left)/b.width*W-160,dy=(e.clientY-b.top)/b.width*W-390;if(dy>-30)dy=-30;const l=Math.hypot(dx,dy);aim={vx:dx/l*3,vy:dy/l*3}};
   const hitAt=(x,y)=>{if(y<=R)return true;for(let r=0;r<ROWS;r++)for(let k=0;k<g[r].length;k++)if(g[r][k]>=0){const[a,b]=xy(r,k);if((a-x)**2+(b-y)**2<28*28)return true}return false};
@@ -221,7 +221,7 @@ function bubble(){
       for(let r=0;r<ROWS&&!hit;r++)for(let k=0;k<g[r].length;k++)if(g[r][k]>=0){const[a,b]=xy(r,k);if((a-pr.x)**2+(b-pr.y)**2<28*28){hit=true;break}}
       if(hit){settle(pr.x,pr.y);if(!document.body.contains(cv))return}
     }
-    c.clearRect(0,0,W,420);
+    cozyCanvas(c,W,420,'sky');
     c.fillStyle='#ff4d6d33';c.fillRect(0,11*28,W,2);
     g.forEach((row,r)=>row.forEach((v,k)=>{if(v>=0){const[a,b]=xy(r,k);orb(a,b,v,R-1)}}));
     if(aim&&!pr){let x=160,y=390,vx=aim.vx,vy=aim.vy;c.fillStyle=COL[cur];for(let i=0;i<420;i++){x+=vx;y+=vy;if(x<R||x>W-R)vx*=-1;if(hitAt(x,y))break;if(i%5===0){c.beginPath();c.arc(x,y,2.6,0,7);c.fill()}}}
@@ -237,7 +237,7 @@ function race(){
   const cv=$('#cv'),c=cv.getContext('2d');
   const mvx=e=>{const r=cv.getBoundingClientRect();tx=(e.clientX-r.left)/r.width*W};
   cv.onpointerdown=mvx;cv.onpointermove=e=>{if(e.buttons||e.pointerType==='touch')mvx(e)};
-  const car=(x,y,col)=>{c.fillStyle=col;c.fillRect(x-18,y-32,36,64);c.fillStyle='#cfefff';c.fillRect(x-12,y-14,24,16);c.fillStyle='#0004';c.fillRect(x-18,y+22,36,8)};
+  const car=(x,y,col)=>toyCar(c,x,y,col);
   const t=gameInterval(()=>{
     if(!document.body.contains(cv)){clearInterval(t);return}
     tick++;px+=(tx-px)*.18;px=Math.max(30,Math.min(W-30,px));dist+=sp;
@@ -245,11 +245,11 @@ function race(){
     cars.forEach(o=>o.y+=sp+1);cars=cars.filter(o=>o.y<H+50);
     let hit=false;
     cars.forEach(o=>{if(Math.abs(o.x-px)<32&&Math.abs(o.y-(H-80))<50){if(o.coin){coins++;o.y=999;snd('coin')}else{hit=true;snd('thud')}}});
-    c.fillStyle='#3b3b4f';c.fillRect(0,0,W,H);c.fillStyle='#fff';
+    cozyCanvas(c,W,H,'road');c.fillStyle='#fff8ed';
     for(let y=-80+(dist%80);y<H;y+=80)c.fillRect(W/2-3,y,6,40);
-    c.fillStyle='#ff4d94';c.fillRect(0,0,6,H);c.fillRect(W-6,0,6,H);
-    cars.forEach(o=>{if(o.coin){c.beginPath();c.arc(o.x,o.y,11,0,7);c.fillStyle='#ffd400';c.fill()}else car(o.x,o.y,'#4cc9f0')});
-    car(px,H-80,'#ff4d94');
+    c.fillStyle='#a3c4a4';c.fillRect(0,0,8,H);c.fillRect(W-8,0,8,H);
+    cars.forEach(o=>{if(o.coin){c.beginPath();c.arc(o.x,o.y,11,0,7);c.fillStyle='#ffd400';c.fill()}else car(o.x,o.y,'#accddd')});
+    car(px,H-80,'#edafc7');
     $('#m').textContent=`Progress ${Math.min(100,Math.floor(dist/TG*100))}% · 🪙 ${coins}`;
     const pts=Math.floor(dist/10)+coins*20;
     if(hit){clearInterval(t);end('race',false,'Crash! 💥',pts)}

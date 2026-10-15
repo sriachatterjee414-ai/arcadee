@@ -89,7 +89,7 @@ function cook(){
 function simon(){
   const COL=['#ff4d6d','#3ddc84','#4cc9f0','#ffd400'],TG=3+LV*2;let seq=[],pos=0,busy=true,lit=-1;
   frame('simon','<div class="msg" id="m"></div><div id="sm" class="tb" style="grid-template-columns:1fr 1fr;gap:12px;max-width:320px"></div>');
-  const paint=()=>{$('#sm').innerHTML=COL.map((c,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:26px;background:${c};opacity:${lit===i?1:.45};box-shadow:${lit===i?'0 0 24px '+c:'none'};padding:0"></button>`).join('');$('#sm').querySelectorAll('button').forEach(b=>b.onclick=()=>tap(+b.dataset.i))};
+  const paint=()=>{$('#sm').innerHTML=COL.map((c,i)=>`<button data-i="${i}" aria-label="${['Heart','Clover','Cloud','Star'][i]} pad" style="aspect-ratio:1;border:0;border-radius:26px;background:${c};opacity:${lit===i?1:.45};box-shadow:${lit===i?'0 0 24px '+c:'none'};padding:0">${toyMark(['X','bud','O','star'][i])}</button>`).join('');$('#sm').querySelectorAll('button').forEach(b=>b.onclick=()=>tap(+b.dataset.i))};
   function show(){
     busy=true;pos=0;let i=0;$('#m').textContent=`Watch... ${seq.length}/${TG}`;
     const t=gameInterval(()=>{
@@ -113,7 +113,7 @@ function whack(){
   frame('whack','<div class="msg" id="m" style="font-size:15px"></div><div class="tb" id="wg" style="grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px"></div>');
   const paint=()=>{
     $('#m').textContent=`Hits ${hits}/${TG} · Misses ${miss}/${maxMisses} · ${Math.max(0,Math.ceil((T-(Date.now()-t0))/1000))}s`;
-    $('#wg').innerHTML=Array.from({length:9},(_,i)=>`<button data-i="${i}" style="aspect-ratio:1;border-radius:50%;border:4px solid #6d4c41;background:${i===up?'#c68642':'#5d4037'};font-size:40px;padding:0">${i===up?'🐹':''}</button>`).join('');
+    $('#wg').innerHTML=Array.from({length:9},(_,i)=>`<button data-i="${i}" style="aspect-ratio:1;border-radius:50%;border:4px solid #6d4c41;background:${i===up?'#c68642':'#5d4037'};font-size:40px;padding:0">${i===up?scenePet('dog','#eacaa6'):''}</button>`).join('');
     $('#wg').querySelectorAll('button').forEach(b=>b.onpointerdown=e=>{e.preventDefault();hit(+b.dataset.i)});
   };
   function hit(i){
@@ -137,7 +137,7 @@ function slide(){
   frame('slide','<div class="msg" id="m" style="font-size:15px"></div><div class="tb" id="sg" style="grid-template-columns:repeat('+N+',1fr);gap:5px;max-width:340px"></div>');
   const paint=()=>{
     $('#m').textContent=`Moves ${moves}. Tap or drag a tile into the gap.`;
-    $('#sg').innerHTML=g.map((v,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:12px;padding:0;font-size:${N>4?20:26}px;font-weight:800;color:#fff;background:${v?`hsl(${330-v*5},75%,${55+(v%3)*4}%)`:'transparent'};box-shadow:${v?'inset 0 -4px #0003':'none'}">${v||''}</button>`).join('');
+    $('#sg').innerHTML=g.map((v,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:12px;padding:0;font-size:${N>4?20:26}px;font-weight:800;color:#69496d;background:${v?['#ecc0d1','#b8d8cc','#d1c0e8','#f3dca8'][v%4]:'transparent'};box-shadow:${v?'inset 0 -4px #0003':'none'}">${v||''}</button>`).join('');
   };
   function mv(i){
     const z=g.indexOf(0);if(!nb(z).includes(i))return;
