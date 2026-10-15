@@ -31,7 +31,7 @@ if(!local.rooms||typeof local.rooms!=='object')local.rooms={};
 if(!process.env.SESSION_SECRET&&!SB_KEY&&!local.sessionSecret){local.sessionSecret=crypto.randomBytes(32).toString('base64url');try{fs.writeFileSync(FILE,JSON.stringify(local,null,2))}catch(e){}}
 const SESSION_SECRET=process.env.SESSION_SECRET||SB_KEY||local.sessionSecret;
 const n=x=>Math.max(0,Math.min(1e7,+x||0));
-const clean=s=>{const o={};Object.keys(s||{}).slice(0,60).forEach(k=>{const v=s[k]||{};o[k]={p:n(v.p),w:n(v.w),pts:n(v.pts),best:n(v.best),lv:Math.min(30,n(v.lv)||1)}});return o};
+const clean=s=>{const o={};Object.keys(s||{}).filter(k=>k!=='_arcade').slice(0,60).forEach(k=>{const v=s[k]||{};o[k]={p:n(v.p),w:n(v.w),pts:n(v.pts),best:n(v.best),lv:Math.min(30,n(v.lv)||1)}});return o};
 function mergeStats(current,incoming){const merged=clean(current);for(const [key,value] of Object.entries(clean(incoming))){const old=merged[key]||{p:0,w:0,pts:0,best:0,lv:1};merged[key]={p:Math.max(old.p,value.p),w:Math.max(old.w,value.w),pts:Math.max(old.pts,value.pts),best:Math.max(old.best,value.best),lv:Math.max(old.lv,value.lv)}}return merged}
 const normalizeName=s=>String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
 const validName=s=>/^[A-Za-z0-9 _-]{2,16}$/.test(String(s||'').trim());
@@ -45,10 +45,12 @@ function saveLocal(){return fs.promises.writeFile(FILE,JSON.stringify(local,null
 async function sb(pathname,opts={}){const r=await fetch(SB_URL+'/rest/v1/'+pathname,{...opts,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json',...(opts.headers||{})}});const text=await r.text();let data=null;try{data=JSON.parse(text)}catch(e){}if(!r.ok)throw new Error((data&&data.message)||text||('Supabase '+r.status));return data}
 async function sbUserByName(name){const q=encodeURIComponent(normalizeName(name));const a=await sb('arcade_users?select=*&username_normalized=eq.'+q+'&limit=1');return a[0]||null}
 async function getPlayers(){if(!durable){return Object.entries(local).filter(([k,v])=>/^u_/.test(k)&&v&&typeof v==='object'&&!Array.isArray(v)).map(([id,v])=>({id,data:{stats:v.stats||{},following:v.following||[],name:v.name||'',badges:earnedBadges(v.stats||{},v.loginStreak||0)}}))}
- let users;try{users=await sb('arcade_users?select=id,username,stats,following,login_streak&order=username.asc')}catch(e){console.error('getPlayers fallback (run the SQL migration):',e.message);users=await sb('arcade_users?select=id,username,stats,following&order=username.asc')}return users.map(u=>({id:u.id,data:{stats:u.stats||{},following:Array.isArray(u.following)?u.following:[],name:u.username||'',badges:earnedBadges(u.stats||{},u.login_streak||0)}}))}
+ const users=await sb('arcade_users?select=*&order=username.asc');
+ return users.map(row=>{const u=storedCosmetics(row);return {id:u.id,data:{stats:u.stats,following:Array.isArray(u.following)?u.following:[],name:u.username||'',badges:earnedBadges(u.stats,u.login_streak||0)}}});}
+
 function sessionId(req){const h=req.headers.authorization||'';const t=h.startsWith('Bearer ')?h.slice(7):'',parts=t.split('.');if(parts.length!==2)return null;const expected=crypto.createHmac('sha256',SESSION_SECRET).update(parts[0]).digest(),actual=Buffer.from(parts[1],'base64url');if(actual.length!==expected.length||!crypto.timingSafeEqual(actual,expected))return null;try{const payload=JSON.parse(Buffer.from(parts[0],'base64url').toString());return payload.id&&payload.exp>Date.now()?payload.id:null}catch(e){return null}}
 async function requireUser(req){return sessionId(req)}
-async function register(name,pin){if(durable){if(await sbUserByName(name))throw Object.assign(new Error('That username is already taken.'),{code:409});const salt=crypto.randomBytes(16).toString('hex');const uid=id();await sb('arcade_users',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid,username:name,username_normalized:normalizeName(name),pin_salt:salt,pin_hash:hashPin(pin,salt),stats:{},reward_state:{_version:1},following:[],coins:0,login_streak:0,daily:{},owned_items:[]})});return {id:uid,name}}
+async function register(name,pin){if(durable){if(await sbUserByName(name))throw Object.assign(new Error('That username is already taken.'),{code:409});const salt=crypto.randomBytes(16).toString('hex');const uid=id();await sb('arcade_users',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid,username:name,username_normalized:normalizeName(name),pin_salt:salt,pin_hash:hashPin(pin,salt),stats:{_arcade:{reward_state:{_version:1}}},following:[]})});return {id:uid,name}}
  if(Object.values(local).some(v=>v&&v.name&&normalizeName(v.name)===normalizeName(name)))throw Object.assign(new Error('That username is already taken.'),{code:409});const uid=id(),salt=crypto.randomBytes(16).toString('hex');local[uid]={name,stats:{},reward_state:{_version:1},following:[],coins:0,loginStreak:0,lastLoginDate:null,daily:{},ownedItems:[],auth:{salt,pin:hashPin(pin,salt)}};await saveLocal();return{id:uid,name}}
 async function login(name,pin){if(durable){const p=await sbUserByName(name);if(!p)throw new Error('Username or PIN is incorrect.');const expected=hashPin(pin,p.pin_salt);if(expected!==p.pin_hash)throw new Error('Username or PIN is incorrect.');return{id:p.id,name:p.username}}
  for(const [uid,p] of Object.entries(local)){if(p&&p.name&&normalizeName(p.name)===normalizeName(name)){if(p.auth&&hashPin(pin,p.auth.salt)===p.auth.pin)return{id:uid,name:p.name}}}throw new Error('Username or PIN is incorrect.')}
@@ -76,8 +78,28 @@ function earnedBadges(stats={},streak=0){
   ...(streak>=7?[{id:'streak7',name:'Seven-Day Streak',description:'Checked in seven days in a row.',icon:'🔥'}]:[])
  ];
 }
+// All account versions have stats JSON. Keep optional wallet fields in a
+// private envelope there; read existing native columns and earlier daily data.
+const PROFILE_DEFAULTS={coins:0,diamonds:0,equipment:{},reward_state:{},login_streak:0,last_login_date:null,daily:{},owned_items:[]};
+function storedCosmetics(row){
+ const meta={...row.daily?._arcade,...row.stats?._arcade};
+ const {_arcade:privateStats,...stats}=row.stats||{};
+ const result={...row,stats,_arcadeState:meta};
+ for(const [field,fallback] of Object.entries(PROFILE_DEFAULTS))result[field]=meta[field]??row[field]??fallback;
+ const {_arcade:privateDaily,...daily}=result.daily;result.daily=daily;
+ return result;
+}
+function durableAccountPatch(current,patch){
+ const next={...patch},meta={...current._arcadeState};
+ let changed=false;
+ for(const field of Object.keys(PROFILE_DEFAULTS)){
+  if(Object.prototype.hasOwnProperty.call(next,field)){meta[field]=next[field];delete next[field];changed=true}
+ }
+ if(changed||Object.prototype.hasOwnProperty.call(next,'stats'))next.stats={...(next.stats||current.stats||{}),_arcade:meta};
+ return next;
+}
 async function getAccount(uid){
- if(durable){const rows=await sb('arcade_users?select=id,username,stats,following,coins,diamonds,equipment,reward_state,login_streak,last_login_date,daily,owned_items,updated_at&id=eq.'+encodeURIComponent(uid)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Account not found.'),{code:404});return rows[0]}
+ if(durable){const rows=await sb('arcade_users?select=*&id=eq.'+encodeURIComponent(uid)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Account not found.'),{code:404});return storedCosmetics(rows[0])}
  const u=local[uid];if(!u)throw Object.assign(new Error('Account not found.'),{code:404});
  return {...u,login_streak:u.loginStreak||0,last_login_date:u.lastLoginDate||null,owned_items:u.ownedItems||[],daily:u.daily||{},updated_at:u.updatedAt||''};
 }
@@ -85,9 +107,9 @@ async function patchAccount(uid,current,patch){
  const stamp=new Date(Math.max(Date.now(),(Date.parse(current.updated_at)||0)+1)).toISOString();
  if(durable){
   const query='arcade_users?id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(current.updated_at);
-  const rows=await sb(query,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({...patch,updated_at:stamp})});
+  const rows=await sb(query,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({...durableAccountPatch(current,patch),updated_at:stamp})});
   if(!Array.isArray(rows)||!rows.length)throw Object.assign(new Error('Your account changed in another tab. Please try again.'),{code:409});
-  return rows[0];
+  return storedCosmetics(rows[0]);
  }
  const u=local[uid];if(!u)throw Object.assign(new Error('Account not found.'),{code:404});
  const next={...u,...patch,updatedAt:stamp};if('login_streak'in patch)next.loginStreak=patch.login_streak;if('last_login_date'in patch)next.lastLoginDate=patch.last_login_date;if('owned_items'in patch)next.ownedItems=patch.owned_items;local[uid]=next;await saveLocal();return {...next,login_streak:next.loginStreak||0,last_login_date:next.lastLoginDate||null,owned_items:next.ownedItems||[],updated_at:next.updatedAt};
@@ -141,7 +163,7 @@ async function purchaseItem(uid,itemId){
    const gem=crypto.randomInt(5)===0,amount=gem?crypto.randomInt(1,4):crypto.randomInt(10,51);
    return {coins:balance-item.price+(gem?0:amount),diamonds:n(current.diamonds)+(gem?amount:0),reward_state:{...current.reward_state,box:{currency:gem?'diamonds':'coins',amount}}};
   }
-  return {[currency]:balance-item.price,owned_items:[...owned,item.id]};
+  return {[currency]:balance-item.price,owned_items:[...owned,item.id],equipment:{pet:'rabbit',hat:'none',theme:'rose',...current.equipment,[item.type]:item.id}};
  });
 }
 async function equipItem(uid,itemId){
@@ -267,7 +289,7 @@ async function directPost(uid,other,text){
 const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp'};
  http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
  try{
-  if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.diamonds':'arcade_users?select=diamonds,equipment,reward_state&limit=1','users.coins':'arcade_users?select=coins&limit=1','users.login_streak':'arcade_users?select=login_streak&limit=1','users.daily':'arcade_users?select=daily&limit=1','users.owned_items':'arcade_users?select=owned_items&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
+  if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.stats':'arcade_users?select=stats,updated_at&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
   if(u.pathname==='/api/players'&&req.method==='GET')return json(res,200,await getPlayers());
   if(u.pathname==='/api/register'&&req.method==='POST')return body(req,async d=>{try{const name=String(d.name||'').trim().replace(/\s+/g,' '),pin=String(d.pin||'');if(!validName(name))return json(res,400,{error:'Username must be 2-16 characters and use letters, numbers, spaces, _ or -.'});if(!validPin(pin))return json(res,400,{error:'PIN must be 4-8 digits.'});const v=await register(name,pin);json(res,201,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||500,{error:e.message||'Could not create account.'})}});
   if(u.pathname==='/api/login'&&req.method==='POST')return body(req,async d=>{try{const v=await login(String(d.name||'').trim(),String(d.pin||''));json(res,200,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||401,{error:e.message})}});
@@ -302,6 +324,6 @@ const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png'
     const dm=u.pathname.match(/^\/api\/direct\/([\w-]{1,80})$/);
     if(dm&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Log in to chat.'});try{return json(res,200,{messages:await directGet(uid,dm[1])})}catch(e){return json(res,e.code||500,{error:e.message})}}
     if(dm&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req),text=String(d.text||'').trim();if(!uid)return json(res,401,{error:'Log in to chat.'});if(!text)return json(res,400,{error:'Message is empty.'});try{await directPost(uid,dm[1],text);json(res,201,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}});
-  const requested=u.pathname==='/'?'/index.html':decodeURIComponent(u.pathname),f=path.join(PUB,requested);if(!f.startsWith(PUB)){res.writeHead(403);return res.end('Forbidden')}fs.readFile(f,(e,data)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'});res.end(data)})
+  const requested=u.pathname==='/'?'/index.html':decodeURIComponent(u.pathname),f=path.join(PUB,requested);if(!f.startsWith(PUB)){res.writeHead(403);return res.end('Forbidden')}fs.readFile(f,(e,data)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(data)})
  }catch(e){json(res,500,{error:'Server error'})}
 }).listen(PORT,function(){console.log(`Arcade Hub running on ${this.address().port} (${durable?'Supabase durable mode':'local prototype mode'})`)});

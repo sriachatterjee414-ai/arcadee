@@ -80,7 +80,7 @@ PIC.hangman='<path d="M16 88h42M30 88V14h36v14" stroke="#6d4c41" stroke-width="6
 PIC.hilo='<rect x="12" y="26" width="38" height="54" rx="6" fill="#fff" transform="rotate(-12 31 53)"/><rect x="48" y="20" width="38" height="54" rx="6" fill="#fff" stroke="#d9d2e2" transform="rotate(10 67 47)"/><text x="54" y="56" font-size="28" font-weight="900" fill="#d32f2f">♥</text><text x="18" y="62" font-size="28" font-weight="900" fill="#241437" transform="rotate(-12 31 53)">♠</text><path d="M22 18l-8 10h16zM78 86l-8-10h16z" fill="#3ddc84"/>';
 PIC.stroop='<path d="M50 12C28 12 12 28 12 50s16 38 38 38c9 0 11-7 7-13-4-6 0-12 8-12h13c8 0 14-6 14-14C92 28 74 12 50 12z" fill="#f3e3c8" stroke="#a1662f" stroke-width="3"/><circle cx="34" cy="38" r="8" fill="#e53935"/><circle cx="54" cy="30" r="8" fill="#fdd835"/><circle cx="72" cy="42" r="8" fill="#43a047"/><circle cx="30" cy="60" r="8" fill="#1e88e5"/>';
 Object.assign(BG,{mines:'#ffd6a5',c4:'#cfe0ff',hangman:'#e6f4c8',hilo:'#ffd9e6',stroop:'#d9e8ff'});
-const pic=id=>`<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="${BG[id]||'#ffb3d1'}"/>${PIC[id]||''}</svg>`;
+const pic=id=>window.CutieArt?window.CutieArt.game(id):`<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="${BG[id]||'#ffb3d1'}"/>${PIC[id]||''}</svg>`;
 const TYPES=['Strategy','Luck','Memory','Reflex','Brain','Skill','Puzzle','Word','Cooking','Mystery','Rhythm','Sports','Cats','Creative'];
 const MAX_LEVEL=30;
 PIC.beat='<circle cx="50" cy="50" r="34" fill="#fff" stroke="#8d6dff" stroke-width="6"/><path d="M62 20v43a13 13 0 1 1-8-12V34l26-7v30" fill="#ff5fa7" stroke="#ff5fa7" stroke-width="5" stroke-linejoin="round"/><path d="M24 18l5 8M76 74l6 7" stroke="#49c6ff" stroke-width="5" stroke-linecap="round"/>';

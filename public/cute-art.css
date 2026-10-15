@@ -1,0 +1,18 @@
+/* Wardrobe and illustrated game cards. */
+body .wardrobe-preview{display:flex;align-items:center;gap:18px;padding:16px 20px;border:3px solid var(--ink);border-radius:26px;background:var(--card);box-shadow:0 5px 0 var(--ink);margin-bottom:24px}
+.wardrobe-stage{position:relative;flex:0 0 138px;display:grid;place-items:center;min-height:145px;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--acc) 16%,transparent),transparent 68%)}
+.wardrobe-spark{position:absolute;right:0;top:8px;font-size:32px;color:var(--acc2)}
+.little-label{font-size:10px;font-weight:600;letter-spacing:1.3px;color:var(--mute)}
+body .wardrobe-preview h2{font-size:24px;margin:7px 0 4px}.wardrobe-preview p{font-size:14px;color:var(--mute);margin:0 0 12px}
+.wardrobe-wallet{display:flex;gap:8px;flex-wrap:wrap}.wardrobe-wallet span{border:2px solid var(--ink);border-radius:20px;padding:4px 10px;background:var(--bg);font-weight:600}
+.shop-categories{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}.shop-categories button{white-space:nowrap}
+body .shop-status{min-height:20px;margin:8px 2px 14px;font-size:14px;color:var(--ink)}
+body .shop-list .shop-row{background:var(--card)!important;color:var(--ink)!important;border-radius:20px!important;gap:14px!important;padding:14px!important}
+body .shop-list .shop-row.is-equipped{background:color-mix(in srgb,var(--acc2) 15%,var(--card))!important}
+body .shop-list .shop-icon{width:76px;min-width:76px;height:76px;border:0;background:color-mix(in srgb,var(--acc) 8%,var(--card));border-radius:18px;overflow:visible}
+.shop-icon svg{display:block;width:68px;height:68px}.shop-icon .cmas{animation:none}
+body .shop-list .shop-item-info b{font-size:17px}body .shop-list .shop-item-info p{font-size:12px;line-height:1.4;color:var(--mute);max-width:330px}
+body .shop-list .shop-row .btn{min-width:100px;padding:8px 12px!important;border-radius:13px}.shop-row .btn span,.shop-row .btn small{display:block}.shop-row .btn small{margin-top:3px;font-size:12px}.need-currency{color:var(--mute);font-size:11px}
+.shop-help{text-align:center;margin:30px 0 10px;padding:20px;border:2px dashed color-mix(in srgb,var(--ink) 35%,transparent);border-radius:20px}.shop-help p{font-size:13px;color:var(--mute)}
+body .gc b{font-size:16px!important;margin:11px 13px 2px!important}body .gc small{font-size:12px;margin:0 13px 12px!important}.cute-game-art{overflow:hidden}
+@media(max-width:480px){body .wardrobe-preview{gap:8px;padding:12px}.wardrobe-stage{flex-basis:112px;min-height:125px}.wardrobe-stage>.cmas{width:112px;height:112px}body .wardrobe-preview h2{font-size:20px}.wardrobe-preview p{font-size:12px}.little-label{font-size:8px}body .shop-list .shop-icon{width:57px;min-width:57px;height:66px}.shop-icon svg{width:58px;height:58px}body .shop-list .shop-row{padding:10px!important;gap:9px!important}body .shop-list .shop-row .btn{min-width:80px;padding:7px!important;font-size:11px}body .shop-list .shop-item-info b{font-size:15px}body .shop-list .shop-item-info p{font-size:11px}.shop-categories .chip{padding:5px 11px}}

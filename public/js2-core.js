@@ -59,7 +59,7 @@ function render(){
 function renderMenu(){
   const categories=['All',...new Set(GAMES.map(g=>g.t))];
   $('#view').innerHTML=`<div class="menu-intro"><h2>Pick a game</h2><p class="sub">Quick rounds, puzzles, and creative breaks.</p></div><div class="menu-tools"><input class="game-search" id="gameSearch" type="search" placeholder="Search games" aria-label="Search games" value="${esc(gameQuery)}"><p class="game-count" id="gameCount"></p></div><div class="category-row">${categories.map(c=>`<button class="chip ${gameFilter===c?'on':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="grid" id="gameGrid"></div>`;
-  const card=g=>`<button class="gc" data-g="${g.id}"><div class="art">${pic(g.id)}</div><b>${g.e} ${g.n}</b><small>Best ${st(g.id).best||0}${hasLevels(g.id)?' · Level '+(st(g.id).lv||1):''}</small></button>`;
+  const card=g=>`<button class="gc" data-g="${g.id}"><div class="art">${pic(g.id)}</div><b>${g.n}</b><small>Best ${st(g.id).best||0}${hasLevels(g.id)?' · Level '+(st(g.id).lv||1):''}</small></button>`;
   const updateGrid=()=>{const games=GAMES.filter(g=>(gameFilter==='All'||g.t===gameFilter)&&`${g.n} ${g.d} ${g.t}`.toLowerCase().includes(gameQuery));$('#gameGrid').innerHTML=games.length?games.map(card).join(''):'<div class="empty-games">No games match that search. Try another name or category.</div>';$('#gameCount').textContent=`${games.length} ${games.length===1?'game':'games'}`;$('#gameGrid').querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sel=b.dataset.g;LV=hasLevels(sel)?Math.min(MAX_LEVEL,st(sel).lv||1):1;render()})};
   $('#gameSearch').oninput=e=>{gameQuery=e.target.value.trim().toLowerCase();updateGrid()};
   $('#view').querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{gameFilter=b.dataset.category;renderMenu()});
@@ -77,28 +77,36 @@ function renderDaily(){
   $('#checkin').onclick=async()=>{const b=$('#checkin');b.disabled=true;try{accountProfile=await apiJson('/api/daily/check-in',{method:'POST'});renderDaily();$('#dailyStatus').textContent=accountProfile.checkInReward?`Checked in! +${accountProfile.checkInReward} coins and 3 diamonds.`:'You already checked in today.'}catch(e){$('#dailyStatus').textContent=e.message;b.disabled=false}};
   $('#view').querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{accountProfile=await apiJson('/api/daily/claim',{method:'POST',body:JSON.stringify({challengeId:b.dataset.claim})});renderDaily()}catch(e){$('#dailyStatus').textContent=e.message;b.disabled=false}});
 }
+let shopCategory='all';
 async function renderShop(){
   $('#view').innerHTML='<p role="status">Opening Mochi’s shop…</p>';
   try{
     const data=await apiJson('/api/shop');if(tab!=='shop')return;accountProfile=data.profile;
     const eq={pet:'rabbit',hat:'none',theme:'rose',...accountProfile.equipment};
-    $('#view').innerHTML=`<section class="wallet-card card"><b>Mochi’s wardrobe</b><strong>🪙 ${accountProfile.coins||0} · 💎 ${accountProfile.diamonds||0}</strong></section><p class="sub">Diamonds: daily gifts & tasks. Coins: scores, wins & level-ups.</p><div class="shop-list">${data.items.map(item=>{
-      const owned=item.type!=='box'&&(!item.price||(accountProfile.ownedItems||[]).includes(item.id)),equipped=eq[item.type]===item.id,currency=item.currency||'coins';
-      const icon=item.type==='theme'?'◉':item.type==='pet'?{rabbit:'🐰',cat:'🐱',dog:'🐶'}[item.id]:item.type==='box'?'🎁':{none:'♡',bow:'🎀',party:'🥳',crown:'👑',flower:'🌼',shades:'🕶️'}[item.id];
-      return `<section class="shop-card shop-row"><span class="shop-icon" style="background:${item.type==='theme'?palettes[item.id]?.[3]||'#fff':'#fff'}">${icon}</span><div><b>${esc(item.name)}</b><p>${esc(item.description)}</p></div><button class="btn sm" data-buy="${item.id}" ${equipped?'disabled':''}>${equipped?'Equipped':owned?'Equip':(currency==='diamonds'?'💎':'🪙')+' '+item.price}</button></section>`;
-    }).join('')}</div><p id="shopStatus" role="status"></p>`;
+    const owned=item=>item.type!=='box'&&(!item.price||(accountProfile.ownedItems||[]).includes(item.id));
+    const categories=[['all','Everything'],['pet','Pets'],['hat','Dress up'],['theme','Themes'],['owned','My items']];
+    const items=data.items.filter(item=>shopCategory==='all'||shopCategory==='owned'&&owned(item)||item.type===shopCategory).sort((a,b)=>['box','pet','hat','theme'].indexOf(a.type)-['box','pet','hat','theme'].indexOf(b.type));
+    const petName={rabbit:'Mochi the bunny',cat:'Mochi the kitty',dog:'Mochi the puppy'}[eq.pet]||'Mochi';
+    $('#view').innerHTML=`<section class="wardrobe-preview"><div class="wardrobe-stage">${window.CutieArt?CutieArt.mochi(eq.pet,eq.hat,136):''}<span class="wardrobe-spark">✧</span></div><div><span class="little-label">YOUR LITTLE COMPANION</span><h2>${petName}</h2><p>Pick a new look. Make it yours.</p><div class="wardrobe-wallet"><span>🪙 ${accountProfile.coins||0}</span><span>💎 ${accountProfile.diamonds||0}</span></div></div></section><div class="shop-categories" aria-label="Shop categories">${categories.map(([key,label])=>`<button class="chip ${shopCategory===key?'on':''}" data-shop-category="${key}">${label}</button>`).join('')}</div><p id="shopStatus" class="shop-status" role="status" aria-live="polite"></p><div class="shop-list">${items.map(item=>{
+      const equipped=eq[item.type]===item.id,currency=item.currency||'coins',balance=accountProfile[currency]||0,need=Math.max(0,item.price-balance),symbol=currency==='diamonds'?'💎':'🪙';
+      const action=equipped?'Equipped':owned(item)?'Equip':item.type==='box'?'Open box':'Buy & equip';
+      return `<section class="shop-card shop-row ${equipped?'is-equipped':''}"><span class="shop-icon">${window.CutieArt?CutieArt.item(item,eq):'♡'}</span><div class="shop-item-info"><b>${esc(item.name)}</b><p>${esc(item.description)}</p>${need&&!owned(item)?`<small class="need-currency">${need} more ${currency} needed</small>`:''}</div><button class="btn sm ${owned(item)?'ghost':''}" data-buy="${item.id}" ${equipped||need&&!owned(item)?'disabled':''}><span>${action}</span>${!owned(item)?`<small>${symbol} ${item.price}</small>`:''}</button></section>`;
+    }).join('')}</div><div class="shop-help"><b>A little play, a little sparkle</b><p>Win coins from games. Collect diamonds from daily gifts and tasks.</p><button class="btn sm ghost" id="shopDaily">Get daily rewards</button></div>`;
+    $('#view').querySelectorAll('[data-shop-category]').forEach(b=>b.onclick=()=>{shopCategory=b.dataset.shopCategory;renderShop()});
+    $('#shopDaily').onclick=()=>{tab='daily';render()};
     $('#view').querySelectorAll('[data-buy]').forEach(b=>b.onclick=async()=>{
-      const item=data.items.find(i=>i.id===b.dataset.buy),owned=!item.price||(accountProfile.ownedItems||[]).includes(item.id);b.disabled=true;
+      const item=data.items.find(i=>i.id===b.dataset.buy),alreadyOwned=owned(item);b.disabled=true;
       try{
-        accountProfile=await apiJson(owned?'/api/shop/equip':'/api/shop/purchase',{method:'POST',body:JSON.stringify({itemId:item.id})});
-        if(item.type!=='box'&&!owned)accountProfile=await apiJson('/api/shop/equip',{method:'POST',body:JSON.stringify({itemId:item.id})});
+        accountProfile=await apiJson(alreadyOwned?'/api/shop/equip':'/api/shop/purchase',{method:'POST',body:JSON.stringify({itemId:item.id})});
         if(item.type==='theme'){pk=item.id;applyPalette(pk)}
+        const prize=accountProfile.lastBox;
         if(tab!=='shop')return;
         await renderShop();
-        if($('#shopStatus'))$('#shopStatus').textContent=item.type==='box'?`Your lucky box: +${accountProfile.lastBox.amount} ${accountProfile.lastBox.currency}!`:`${item.name} equipped!`;
+        if($('#shopStatus'))$('#shopStatus').textContent=item.type==='box'?`Surprise! +${prize.amount} ${prize.currency}.`:`${item.name} is now equipped. So cute!`;
+        if(window.refreshMochi)refreshMochi();
       }catch(e){if(tab==='shop'){await renderShop();if($('#shopStatus'))$('#shopStatus').textContent=e.message}b.disabled=false}
     });
-  }catch(e){if(tab==='shop')$('#view').innerHTML=`<p role="alert">${esc(e.message)}</p>`}
+  }catch(e){if(tab==='shop')$('#view').innerHTML=`<section class="card shop-unavailable"><h2>Mochi’s shop is taking a little break</h2><p role="alert">${esc(e.message)}</p><button class="btn" id="retryShop">Try again</button></section>`;if($('#retryShop'))$('#retryShop').onclick=renderShop}
 }
 function renderSettings(){
   $('#view').innerHTML=`<h2>Settings</h2><p class="sub">Make the arcade feel like yours.</p><section class="card"><div class="top"><b>Color themes</b><span>${esc(pk)}</span></div><div class="palette-grid">${Object.entries(palettes).filter(([k])=>!['neon','ocean','sunset','mint','sky','peach','grape'].includes(k)||(accountProfile.ownedItems||[]).includes(k)).map(([k,v])=>`<button class="palette-dot ${pk===k?'sel':''}" data-palette="${k}" title="${k}" aria-label="${k} theme" style="background:linear-gradient(135deg,${v[3]},${v[4]})"></button>`).join('')}</div><small style="color:var(--mute)">Unlock extra themes in the coin shop.</small></section><section class="card"><div class="top"><div><b>Game sounds</b><div class="sub" style="margin:3px 0 0">Button and game effects</div></div><button class="btn ${muted?'ghost':''}" id="soundSetting">${muted?'Muted':'On'}</button></div></section><section class="card"><div class="top"><div><b>Account</b><div class="sub" style="margin:3px 0 0">Signed in as ${esc(myName||'Player')}</div></div><button class="btn ghost" id="settingsLogout">Log out</button></div></section>`;

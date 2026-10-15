@@ -27,7 +27,7 @@ test('wallet, claims, ownership, replay protection, concurrent debit, persistenc
  await api('/api/players/'+uid,{stats:{snake:{p:1,w:1,pts:1000,best:1000,lv:2}},following:[]},'PUT');
  p=await api('/api/game/reward',{game:'snake'});assert.equal(p.gameReward,82);assert.equal(p.coins,117);
  assert.equal((await api('/api/game/reward',{game:'snake'})).gameReward,0);
- assert.equal((await api('/api/shop/purchase',{itemId:'party'})).coins,27);
+ const boughtHat=await api('/api/shop/purchase',{itemId:'party'});assert.equal(boughtHat.coins,27);assert.equal(boughtHat.equipment.hat,'party');
  p=await api('/api/shop/equip',{itemId:'party'});assert.equal(p.equipment.hat,'party');
  const revives=await Promise.all([api('/api/game/revive',{}),api('/api/game/revive',{})]);assert.deepEqual(revives.map(x=>x.status).sort(),[200,400]);
  p=await api('/api/profile/me');assert.equal(p.coins,2);assert.equal(p.equipment.hat,'party');
@@ -40,10 +40,10 @@ test('premium pets, themes and repeatable lucky boxes',async()=>{
  await ready;
  const user=await api('/api/login',{name:'ShopFixture',pin:'123456'});token=user.token;
  assert.equal((await api('/api/game/reward',{game:'snake'})).gameReward,0);
- let p=await api('/api/shop/purchase',{itemId:'cat'});assert.equal(p.diamonds,120);
+ let p=await api('/api/shop/purchase',{itemId:'cat'});assert.equal(p.diamonds,120);assert.equal(p.equipment.pet,'cat');
  p=await api('/api/shop/equip',{itemId:'cat'});assert.equal(p.equipment.pet,'cat');
  assert.equal((await api('/api/shop/purchase',{itemId:'cat'})).status,409);
- p=await api('/api/shop/purchase',{itemId:'dog'});assert.equal(p.diamonds,20);
+ p=await api('/api/shop/purchase',{itemId:'dog'});assert.equal(p.diamonds,20);assert.equal(p.equipment.pet,'dog');
  p=await api('/api/shop/equip',{itemId:'dog'});assert.equal(p.equipment.pet,'dog');
  await api('/api/shop/purchase',{itemId:'mint'});
  p=await api('/api/shop/equip',{itemId:'mint'});assert.equal(p.equipment.theme,'mint');
