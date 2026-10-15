@@ -40,7 +40,7 @@ The personal chat view refreshes messages while it is open. Photo capture uses t
 
 ## Cute arcade restoration
 
-- Rabbit Mochi is free; unlock Cat (80 diamonds) or Puppy (100 diamonds), then equip them in Shop. Six accessory choices include a blinking, bobbing companion wearing a party hat. Equipment syncs with the account.
+- Rabbit Mochi is free; unlock Cat (80 diamonds) or Puppy (100 diamonds), then equip them in Shop. Six accessory choices include a blinking, bobbing companion wearing a party hat. Equipment syncs with the account. Purchases equip the cosmetic in the same transaction.
 - Daily check-in: 3 diamonds plus 10–45 coins. Each completed daily task: 2 diamonds plus its listed coins.
 - Games: 2 coins per completed round, 1 per 20 points, 10 per win, and 20 per unlocked level, capped at 500 coins per reward claim. Saved score checkpoints prevent duplicate reward claims. This casual arcade uses client-reported scores; rewards are not suitable for real-money purchases or competitive anti-cheat guarantees.
 - Lucky box: 30 coins; 80% chance of 10–50 coins, 20% chance of 1–3 diamonds. The shop displays these odds.
@@ -48,6 +48,8 @@ The personal chat view refreshes messages while it is open. Photo capture uses t
 - Tic-Tac-Toe, RPS, Ludo, Chess, Snakes & Ladders, Pong, Candy Breaker and 2048 use scores without level selection. Snake, Flappy and Match 3 retain progression.
 - Photo Booth includes colour filters, draggable bunny/kitty ears, image upload and downloadable strips. All 43 games/tools and chat remain available.
 
-**Deployment:** Run the updated `SUPABASE_SCHEMA.sql` before deploying to a Supabase-backed server: it adds `diamonds`, `equipment` and `reward_state`. Existing accounts and scores are preserved. Without Supabase, set `DATA_FILE` to a persistent disk path for durable local storage.
+**Deployment:** The shop works with existing Supabase account tables, including databases without the optional wallet columns. Account extras are stored in a private `_arcade` envelope inside the existing `stats` JSON column; that envelope is removed from public scores. Existing wallet columns and earlier `daily._arcade` data remain readable, and updated values take priority. The full `SUPABASE_SCHEMA.sql` is available for new installations; the shop does not require a manual migration. Without Supabase, set `DATA_FILE` to a persistent disk path for durable local storage.
 
-Validation: `node --test tests/economy.cjs` runs the isolated wallet integration test using Node's built-in test runner and a temporary local server on an available port.
+Validation: `node --test tests/*.cjs` runs storage compatibility checks and the isolated wallet integration test using Node's built-in test runner and a temporary local server on an available port.
+
+Game cards and wardrobe previews use original SVG illustrations from `public/cute-art.js`, with blush, soft colours and gentle movement. The shop includes Pets, Dress up, Themes and My items categories.
