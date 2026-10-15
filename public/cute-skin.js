@@ -87,7 +87,7 @@ const st=document.createElement('style');st.textContent=CSS;document.head.append
 /* ---------- mascot, sparkles, background ---------- */
 const mascot=(hat=accountProfile.equipment?.hat||'none',size=100)=>{const pet=accountProfile.equipment?.pet||'rabbit';if(window.CutieArt)return window.CutieArt.mochi(pet,hat,size);const H={party:'<path d="M43 47L60 10l18 37z" fill="#9b7bff"/><circle cx="60" cy="10" r="6" fill="#ffd966"/><path d="M51 30l19 7M47 40l19-20" stroke="#fff"/>',flower:'<g fill="#ffd966"><circle cx="45" cy="44" r="8"/><circle cx="60" cy="40" r="8"/><circle cx="75" cy="44" r="8"/></g>',shades:'<path d="M30 67h60l-5 15H68l-8-9-8 9H35z" fill="#9b7bff"/>',none:'',bow:'<path d="M86 38l-14 6 3 12zM86 38l14 8-8 10z" fill="var(--acc)"/><circle cx="86" cy="40" r="4" fill="#fff"/>',crown:'<path d="M46 50L48 34l8 9 4-14 4 14 8-9 2 16z" fill="#ffd966"/>'};
 return `<svg class="cmas" width="${size}" height="${size}" viewBox="0 0 120 120"><g stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${pet==='rabbit'?`<ellipse cx="40" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(-10 40 32)"/><ellipse cx="80" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(10 80 32)"/><ellipse cx="40" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(-10 40 34)"/><ellipse cx="80" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(10 80 34)"/>`:pet==='cat'?'<path d="M24 64L20 23l32 25M68 48l32-25-4 41" fill="#fff"/><path d="M28 45l-2-12 14 13M80 46l14-13-2 12" stroke="#ff9ccb"/>':'<ellipse cx="26" cy="58" rx="15" ry="28" fill="#d9ac86"/><ellipse cx="94" cy="58" rx="15" ry="28" fill="#d9ac86"/>'}<ellipse cx="60" cy="76" rx="42" ry="34" fill="#fff"/><g class="ey" stroke="none"><ellipse cx="44" cy="74" rx="5.5" ry="7" fill="${INK}"/><ellipse cx="76" cy="74" rx="5.5" ry="7" fill="${INK}"/><circle cx="46" cy="71" r="2" fill="#fff"/><circle cx="78" cy="71" r="2" fill="#fff"/></g><ellipse cx="33" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><ellipse cx="87" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><path d="M54 84q3 4.5 6 0q3 4.5 6 0" fill="none"/>${H[hat]||''}</g></svg>`};
-function burst(x,y,n=14){const cols=['#ff7eb6','#ffd966','#7be0c3','#7cc8ff','#c9a8ff'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cspb';s.style.left=x+'px';s.style.top=y+'px';s.style.background=cols[i%5];document.body.append(s);const a=Math.random()*6.28,r=40+Math.random()*80;s.animate([{transform:'translate(0,0) scale(1) rotate(0)',opacity:1},{transform:`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(.2) rotate(240deg)`,opacity:0}],{duration:700+Math.random()*300,easing:'ease-out'}).onfinish=()=>s.remove()}}
+function burst(x,y,n=14){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const cols=['#ff7eb6','#ffd966','#7be0c3','#7cc8ff','#c9a8ff'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cspb';s.style.left=x+'px';s.style.top=y+'px';s.style.background=cols[i%5];document.body.append(s);const a=Math.random()*6.28,r=40+Math.random()*80;s.animate([{transform:'translate(0,0) scale(1) rotate(0)',opacity:1},{transform:`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(.2) rotate(240deg)`,opacity:0}],{duration:700+Math.random()*300,easing:'ease-out'}).onfinish=()=>s.remove()}}
 document.addEventListener('pointerdown',e=>{if(e.target.closest('.btn,.chip,.gc,#ctabs button,.cib'))burst(e.clientX,e.clientY,6)});
 const D=document.createElement('div');D.id='cdood';const S=document.createElement('div');S.id='cspark';document.body.prepend(S);document.body.prepend(D);
 const shp=[c=>`<svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round"/></svg>`,c=>`<svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.6-7 10-7 10z" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round"/></svg>`,c=>`<svg width="44" height="20" viewBox="0 0 44 20"><path d="M2 10q5-9 10 0t10 0 10 0 10 0" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/></svg>`,c=>`<svg width="48" height="30" viewBox="0 0 48 30"><path d="M10 26a8 8 0 010-16 10 10 0 0119-2 8 8 0 019 8 7 7 0 01-2 10z" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/></svg>`,c=>`<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="${c}" stroke-width="2.2"/></svg>`,c=>`<svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/></svg>`];
@@ -154,9 +154,9 @@ function flappy(){
  const cv=$('#fc'),c=cv.getContext('2d');let by=200,vy=0,P=[],sc=0,t=60,go=false,done=false,paused=false,revived=false;
  const flap=()=>{if(done||paused)return;go=true;vy=-6.1;snd('pop')};
  cv.onpointerdown=e=>{e.preventDefault();flap()};
- const key=e=>{if(e.code==='Space'){e.preventDefault();flap()}};addEventListener('keydown',key);
+ const key=e=>{if(e.code==='Space'){e.preventDefault();flap()}};gameListen(window,'keydown',key);
  const fin=(w,txt)=>{if(done||paused)return;if(!w&&!revived){paused=true;offerRevive('flappy',sc*40,()=>{revived=true;paused=false;by=200;vy=0;P=[];t=0;go=false},()=>{paused=false;revived=true;fin(w,txt)});return}done=true;clearInterval(tm);removeEventListener('keydown',key);end('flappy',w,txt,sc*40+(w?LV*50:0))};
- const tm=setInterval(()=>{
+ const tm=gameInterval(()=>{
   if(paused){if(!$('#revive')){clearInterval(tm);removeEventListener('keydown',key)}return}
   if(!document.body.contains(cv)){clearInterval(tm);removeEventListener('keydown',key);return}
   if(go){vy+=.38;by+=vy;t++;if(t>85){t=0;P.push({x:330,g:gap/2+35+Math.random()*(440-gap-70),s:0})}
@@ -179,7 +179,7 @@ function breakout(){
  cv.onpointermove=e=>{px=Math.max(PW/2,Math.min(320-PW/2,pos(e)))};
  cv.onpointerdown=e=>{e.preventDefault();cv.onpointermove(e);if(!vy){vx=(Math.random()*2-1)*2;vy=-sp;snd('click')}};
  const fin=(w,t)=>{if(done)return;done=true;clearInterval(tm);end('breakout',w,t,sc*20+(w?lives*100+LV*50:0))};
- const tm=setInterval(()=>{
+ const tm=gameInterval(()=>{
   if(!document.body.contains(cv)){clearInterval(tm);return}
   if(!vy){bx=px;by=392}else{bx+=vx;by+=vy;if(bx<7||bx>313){vx*=-1;bx=Math.max(7,Math.min(313,bx))}if(by<7){vy=Math.abs(vy)}
    if(vy>0&&by>392&&by<408&&Math.abs(bx-px)<PW/2+6){vy=-Math.abs(vy)*1.004;vx=(bx-px)/(PW/2)*4.2;snd('pop')}
@@ -199,7 +199,7 @@ function pong(){
  cv.onpointermove=e=>{const r=cv.getBoundingClientRect();px=Math.max(PW/2,Math.min(W-PW/2,(e.clientX-r.left)/r.width*W))};cv.onpointerdown=cv.onpointermove;
  const reset=d=>{bx=160;by=210;vx=(Math.random()*2-1)*sp*.6;vy=d*sp};
  const fin=(w,t)=>{if(done)return;done=true;clearInterval(tm);end('pong',w,t,ps*60+(w?LV*50:0))};
- const tm=setInterval(()=>{
+ const tm=gameInterval(()=>{
   if(!document.body.contains(cv)){clearInterval(tm);return}
   ax+=Math.max(-aiS,Math.min(aiS,bx-ax));ax=Math.max(PW/2,Math.min(W-PW/2,ax));
   bx+=vx;by+=vy;if(bx<8||bx>W-8){vx*=-1;bx=Math.max(8,Math.min(W-8,bx));snd('click')}
@@ -224,7 +224,7 @@ function lights(){
  paint();
 }
 const EX={flappy,breakout,pong,lights};
-const _sg=startGame;startGame=function(g){return EX[g]?EX[g]():_sg(g)};
+const _sg=startGame;startGame=function(g){if(EX[g]){beginGame();return EX[g]()}return _sg(g)};
 
 render();
 }catch(err){console.error('Cutie skin failed to load:',err)}

@@ -33,7 +33,7 @@ function ludo2(pvp,NP){
     if(np===56)v+=80;if(p<0)v+=50;if(np<=50&&SAFE.includes(a))v+=20;return v}
   function doRoll(){
     roll=1+Math.floor(Math.random()*6);const o=opts(cur,roll);
-    if(!o.length){msg=`${NM[P[cur]]} rolled ${roll}: no move.`;paint();return void setTimeout(()=>nextTurn(false),900)}
+    if(!o.length){msg=`${NM[P[cur]]} rolled ${roll}: no move.`;paint();return void gameTimeout(()=>nextTurn(false),900)}
     if(human(cur)&&o.length>1){pend=o;msg='Tap a glowing token.';return paint()}
     let k=o[0];
     if(!human(cur)){k=Math.random()<Math.max(0,.7-LV*.07)?o[Math.floor(Math.random()*o.length)]:o.sort((x,y)=>score(y)-score(x))[0]}
@@ -48,13 +48,13 @@ function ludo2(pvp,NP){
       if(pvp)return end('ludo',true,NM[pl]+' wins! 🎉',0,true);
       return end('ludo',w===0,w===0?'You win! 🎉':NM[pl]+' bot wins.',w===0?500+LV*50+(NP-2)*50:T[0].filter(q=>q===56).length*40);
     }
-    const six=roll===6;setTimeout(()=>nextTurn(six),600);
+    const six=roll===6;gameTimeout(()=>nextTurn(six),600);
   }
   function nextTurn(extra){
     if(!alive())return;
     if(!extra)cur=(cur+1)%NP;
     roll=0;pend=null;msg='';paint();
-    if(!human(cur))setTimeout(()=>{if(alive())doRoll()},700);
+    if(!human(cur))gameTimeout(()=>{if(alive())doRoll()},700);
   }
   paint();
 }
@@ -84,7 +84,7 @@ function snl2(pvp,NP){
   function go(){
     if(busy)return;busy=true;roll=1+Math.floor(Math.random()*6);turns++;
     const np=pos[cur]+roll;if(np<=100)pos[cur]=np;msg=`Player ${cur+1} rolled ${roll}.`;paint();
-    setTimeout(()=>{
+    gameTimeout(()=>{
       if(!alive())return;
       const q=pos[cur];
       if(lad[q]){pos[cur]=lad[q];msg='🪜 Ladder! Up to '+lad[q]}
@@ -94,7 +94,7 @@ function snl2(pvp,NP){
         if(pvp)return end('snl',true,`Player ${cur+1} wins! 🎉`,0,true);
         return end('snl',cur===0,cur===0?'You reached 100! 🎉':`Bot ${cur+1} won.`,cur===0?Math.max(100,600-turns*8)+LV*50:0);
       }
-      setTimeout(()=>{if(!alive())return;if(roll!==6)cur=(cur+1)%NP;busy=false;roll=0;paint();if(!human(cur)){busy=true;setTimeout(()=>{if(alive()){busy=false;go()}},600)}},700);
+      gameTimeout(()=>{if(!alive())return;if(roll!==6)cur=(cur+1)%NP;busy=false;roll=0;paint();if(!human(cur)){busy=true;gameTimeout(()=>{if(alive()){busy=false;go()}},600)}},700);
     },500);
   }
   paint();
@@ -174,7 +174,7 @@ function tetris(){
   e0.onpointerdown=e=>{sx=mx=e.clientX;sy=e.clientY;moved=0};
   e0.onpointermove=e=>{if(e.pointerType==='mouse'&&!e.buttons)return;const cw=e0.getBoundingClientRect().width/W;while(e.clientX-mx>=cw){move(1);mx+=cw;moved=1}while(mx-e.clientX>=cw){move(-1);mx-=cw;moved=1}};
   e0.onpointerup=e=>{const dy=e.clientY-sy;if(!moved&&Math.abs(dy)<8)rot();else if(!moved&&dy>60)drop()};
-  const tm=setInterval(()=>{if(!document.body.contains(e0)){clearInterval(tm);return}down()},fallMs);
+  const tm=gameInterval(()=>{if(!document.body.contains(e0)){clearInterval(tm);return}down()},fallMs);
   spawn();paint();
 }
 /* Colour Pour */

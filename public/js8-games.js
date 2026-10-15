@@ -19,7 +19,7 @@ function mines(){
     if(flag){if(!c.r){c.f=c.f?0:1;snd('click')}paint();return}
     if(c.f||c.r)return;
     if(!placed)place(i);
-    if(c.m){over=true;snd('thud');paint();return setTimeout(()=>{if(document.body.contains($('#mg')))end('mines',false,'Boom! 💥',cells.filter(x=>x.r).length*10)},1100)}
+    if(c.m){over=true;snd('thud');paint();return gameTimeout(()=>{if(document.body.contains($('#mg')))end('mines',false,'Boom! 💥',cells.filter(x=>x.r).length*10)},1100)}
     reveal(i);snd('pop');paint();
     if(cells.every(x=>x.m||x.r)){const secs=(Date.now()-t0)/1000;end('mines',true,'Field cleared! 🚩',cells.filter(x=>x.r).length*10+Math.max(0,(300-secs)|0)+LV*50)}
   }
@@ -43,14 +43,14 @@ function c4(){
   };
   const empties=()=>B.filter(v=>!v).length;
   function after(p){
-    if(wins(B,p)){over=true;paint();return setTimeout(()=>{if(!document.body.contains($('#cb')))return;p===1?end('c4',true,'Four in a row! 🔴',100+LV*20+empties()*5):end('c4',false,'The CPU connected four.',10)},700)}
+    if(wins(B,p)){over=true;paint();return gameTimeout(()=>{if(!document.body.contains($('#cb')))return;p===1?end('c4',true,'Four in a row! 🔴',100+LV*20+empties()*5):end('c4',false,'The CPU connected four.',10)},700)}
     if(!valid(B).length){over=true;return end('c4',false,"It's a draw!",30)}
     return false;
   }
   function play(c){
     if(over||turn!==1||B[c])return;drop(B,c,1);snd('pop');
     if(after(1)!==false)return;turn=2;paint();
-    setTimeout(()=>{if(over||!document.body.contains($('#cb')))return;drop(B,cpu(),2);snd('click');if(after(2)!==false)return;turn=1;paint()},450);
+    gameTimeout(()=>{if(over||!document.body.contains($('#cb')))return;drop(B,cpu(),2);snd('click');if(after(2)!==false)return;turn=1;paint()},450);
   }
   paint();
 }
@@ -71,8 +71,8 @@ function hangman(){
     if(done)return;got.add(l);
     if(w.includes(l))snd('pop');else{wrong++;snd('buzz')}
     paint();
-    if([...w].every(x=>got.has(x))){done=true;setTimeout(()=>document.body.contains($('#hk'))&&end('hangman',true,'You saved them! 🔤',100+(MAX-wrong)*25+LV*20),500)}
-    else if(wrong>=MAX){done=true;paint();setTimeout(()=>document.body.contains($('#hk'))&&end('hangman',false,`The word was "${w}".`,[...w].filter(x=>got.has(x)).length*10),1200)}
+    if([...w].every(x=>got.has(x))){done=true;gameTimeout(()=>document.body.contains($('#hk'))&&end('hangman',true,'You saved them! 🔤',100+(MAX-wrong)*25+LV*20),500)}
+    else if(wrong>=MAX){done=true;paint();gameTimeout(()=>document.body.contains($('#hk'))&&end('hangman',false,`The word was "${w}".`,[...w].filter(x=>got.has(x)).length*10),1200)}
   }
   paint();
 }
@@ -108,7 +108,7 @@ function stroop(){
     $('#sp').innerHTML=NAMES.slice(0,K).map((n,i)=>`<button data-i="${i}" style="padding:14px 0;font-weight:800">${n[0]}</button>`).join('');
     $('#sp').querySelectorAll('button').forEach(x=>x.onclick=()=>answer(+x.dataset.i));
     info();t0=Date.now();stop();
-    timer=setInterval(()=>{
+    timer=gameInterval(()=>{
       if(!document.body.contains($('#sb'))){stop();return}
       const f=(Date.now()-t0)/LIM;$('#sb').style.width=Math.max(0,100-f*100)+'%';
       if(f>=1){stop();miss()}
@@ -124,18 +124,20 @@ function stroop(){
 }
 /* Jenga */
 function jenga(){
-  const layers=8+Math.floor(LV/2),B=Array.from({length:layers},()=>[1,1,1]),TG=Math.min((layers-1)*2,4+Math.floor(LV*.55));let pulled=0;
-  frame('jenga','<div class="msg" id="m"></div><div id="tw" data-fz="260" style="max-width:260px;margin:0 auto"></div>');
-  const paint=()=>{
-    $('#m').textContent=`Level ${LV} · Pulled ${pulled}/${TG}. Never remove the last block from a layer.`;
-    $('#tw').innerHTML=B.map((r,i)=>`<div style="display:flex;gap:4px;margin-bottom:4px">${r.map((v,k)=>`<button data-r="${i}" data-k="${k}" ${v&&i>0&&r.reduce((a,b)=>a+b,0)>1?'':'disabled'} aria-label="Pull block ${i+1}-${k+1}" style="flex:1;height:30px;padding:0;border:0;border-radius:5px;background:${v?(i%2?'#c98b4f':'#b97a3d'):'transparent'};box-shadow:${v?'inset 0 -4px #0003':'none'}"></button>`).join('')}</div>`).join('');
-    $('#tw').querySelectorAll('button').forEach(b=>b.onclick=()=>pull(+b.dataset.r,+b.dataset.k));
-  };
-  function pull(i,k){
-    const left=B[i].reduce((a,b)=>a+b,0),risk=Math.min(.22,.012+LV*.0025+(3-left)*.04+(pulled/TG)*.045);
-    if(Math.random()<risk)return end('jenga',false,'The tower fell! 💥',pulled*20);
-    B[i][k]=0;pulled++;paint();
-    if(pulled>=TG)end('jenga',true,'Steady hands! 🧱🎉',pulled*20+LV*50);
+  const layers=8+Math.min(4,Math.floor(LV/5)),blocks=Array.from({length:layers},()=>[1,1,1]),target=4+Math.min(8,Math.floor(LV/3));let pulls=0,settled=false;
+  frame('jenga','<div class="scene-title"><small>MOCHI’S LIVING ROOM</small><h2>A little tower of courage</h2><p>Pull a block. Keep the tower smiling.</p></div><div class="scene-hud" id="towerHud"></div><div id="tw"></div><p class="scene-tip">The roof and foundation stay in place. A layer needs at least one block.</p><p id="towerHint" role="status"></p>');
+  function paint(){
+    $('#towerHud').innerHTML=`<span>Blocks <b>${pulls}/${target}</b></span><span>Score <b>${pulls*25}</b></span>`;
+    $('#tw').innerHTML=towerArt(blocks);
+    $('#tw').querySelectorAll('[data-block-row]').forEach(button=>button.onclick=()=>{
+      if(settled)return;const row=+button.dataset.blockRow,col=+button.dataset.blockCol,left=blocks[row].filter(Boolean).length;
+      if(left<=1){$('#towerHint').textContent='That is the last support. Choose another layer!';snd('buzz');return}
+      blocks[row][col]=0;pulls++;snd('pop');
+      const unstable=blocks[row][1]===0&&blocks[row].filter(Boolean).length===1;
+      if(unstable){settled=true;paint();$('#tw .tower-room').classList.add('tower-fallen');return gameTimeout(()=>end('jenga',false,'The tower tipped! Keep the middle support next time.',pulls*25),650)}
+      paint();$('#towerHint').textContent='Nice and steady! Leave the centre block to support thin layers.';
+      if(pulls>=target){settled=true;gameTimeout(()=>end('jenga',true,'A perfectly balanced little tower!',pulls*25+LV*50),400)}
+    });
   }
   paint();
 }
@@ -152,7 +154,7 @@ function snake(){
   const place=()=>{do{ap=[Math.floor(Math.random()*N),Math.floor(Math.random()*N)]}while(sn.some(p=>p[0]===ap[0]&&p[1]===ap[1]))};
   const draw=()=>{c.clearRect(0,0,300,300);c.font='18px serif';c.fillText('🍎',ap[0]*S+1,ap[1]*S+17);sn.forEach((p,i)=>{c.fillStyle=i?'#ff4d94':'#8e2f5f';c.beginPath();c.roundRect(p[0]*S+1,p[1]*S+1,S-2,S-2,7);c.fill();if(!i){c.fillStyle='#fff';c.fillRect(p[0]*S+5,p[1]*S+4,4,4);c.fillRect(p[0]*S+12,p[1]*S+4,4,4)}})};
   const finish=()=>end('snake',sc>=SW,sc>=SW?'Great run!':'Game over',sc);
-  const t=setInterval(()=>{
+  const t=gameInterval(()=>{
     if(paused){if(!$('#revive'))clearInterval(t);return}
     if(!document.body.contains(cv)){clearInterval(t);return}
     d=nd;const h=[sn[0][0]+d[0],sn[0][1]+d[1]];
@@ -210,7 +212,7 @@ function bird(){
   };
   function fire(vx,vy){
     busy=true;snd('swoosh');P=[{x:px,y:py,vx,vy,t:Q[idx],on:true,used:false}];
-    const t=setInterval(()=>{
+    const t=gameInterval(()=>{
       if(!document.body.contains(cv)){clearInterval(t);return}
       P.forEach(o=>{
         if(!o.on)return;
@@ -303,7 +305,7 @@ function m3(){
       else if(mv<=0)end('m3',false,'Out of moves.',sc);
       return}
     grow(m);snd('pop');m.forEach(i=>{if(g[i/N|0][i%N]===gk)got++;ice[i]=0});sc+=m.size*10;
-    drop(m);paint();setTimeout(()=>{if(document.body.contains($('#bd')))step(find())},260);
+    drop(m);paint();gameTimeout(()=>{if(document.body.contains($('#bd')))step(find())},260);
   }
   function swipe(a,dx,dy){
     if(busy)return;

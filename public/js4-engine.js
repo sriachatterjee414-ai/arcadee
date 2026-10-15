@@ -1,11 +1,37 @@
+/* Every run owns its callbacks. Leaving or replaying cancels the old run. */
+let gameScope=null;
+function disposeGame(){
+  if(!gameScope)return;
+  const scope=gameScope;gameScope=null;
+  scope.timers.forEach(clearTimeout);scope.intervals.forEach(clearInterval);scope.frames.forEach(cancelAnimationFrame);
+  scope.cleanups.forEach(cleanup=>cleanup());
+}
+function beginGame(){disposeGame();gameScope={timers:new Set(),intervals:new Set(),frames:new Set(),cleanups:[]}}
+function gameTimeout(callback,delay){
+  const scope=gameScope;if(!scope)return 0;
+  const id=setTimeout(()=>{scope.timers.delete(id);if(gameScope===scope)callback()},delay);scope.timers.add(id);return id;
+}
+function gameInterval(callback,delay){
+  const scope=gameScope;if(!scope)return 0;
+  const id=setInterval(()=>{if(gameScope===scope&&!document.hidden)callback()},delay);scope.intervals.add(id);return id;
+}
+function gameAnimation(callback){
+  const scope=gameScope;if(!scope)return 0;
+  const id=requestAnimationFrame(time=>{scope.frames.delete(id);if(gameScope===scope)callback(time)});scope.frames.add(id);return id;
+}
+function gameListen(target,event,callback,options){
+  target.addEventListener(event,callback,options);
+  gameScope?.cleanups.push(()=>target.removeEventListener(event,callback,options));
+}
+function gameCleanup(callback){gameScope?.cleanups.push(callback)}
 function fit(){
   document.querySelectorAll('#game canvas').forEach(c=>{c.style.height='auto';c.style.maxWidth='100%'});
 }
 addEventListener('resize',()=>{if(playing)fit()});
 function frame(g,inner){
   const G=GAMES.find(x=>x.id===g);
-  $('#view').innerHTML=`<section class="card game-panel"><div class="top"><b>${G.n}</b><b style="color:var(--acc2)">${G.tool?'':hasLevels(g)?'Level '+LV:'Best '+(st(g).best||0)}</b></div><div id="game">${inner}</div></section>`;
-  document.body.classList.add('pl');setTimeout(fit,0);
+  $('#view').innerHTML=`<section class="card game-panel" data-scene="${g}"><div class="top"><b>${G.n}</b><b style="color:var(--acc2)">${G.tool?'':hasLevels(g)?'Level '+LV:'Best '+(st(g).best||0)}</b></div><div id="game">${inner}</div></section>`;
+  document.body.classList.add('pl');gameTimeout(fit,0);
   return $('#game');
 }
 let AC=null,muted=false;try{muted=localStorage.getItem('ah_mute')==='1'}catch(e){}
@@ -20,19 +46,20 @@ function snd(t){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled||b.id==='snd')return;snd(b.closest('#bd')?'move':'click')});
 function end(g,won,text,score=0,nr){
+  if(!gameScope)return;disposeGame();
   snd(won?'win':'lose');
   if(!nr)record(g,won,score);
   const el=$('#game');if(!el)return;
   const nx=hasLevels(g)&&won&&LV<MAX_LEVEL;
   el.innerHTML=`<div class="msg ${won?'win':'lose'}">${text}</div><div class="msg" style="font-size:15px">Score: ${score}${hasLevels(g)?' · Level '+LV:''}</div><p id="roundReward" role="status">Saving rewards…</p><div class="row"><button class="btn" id="again">🔁 Replay</button>${nx?'<button class="btn" id="nxt">Next level ➜</button>':''}<button class="btn ghost" id="ex">Exit</button></div>`;
-  if(!nr)saveQueue.then(()=>apiJson('/api/game/reward',{method:'POST',body:JSON.stringify({game:g})})).then(p=>{accountProfile=p;if(document.body.contains(el)&&$('#roundReward'))$('#roundReward').textContent=`+${p.gameReward} coins · Best ${st(g).best||0}`}).catch(e=>{if($('#roundReward'))$('#roundReward').textContent='Reward not saved: '+e.message});
+  if(!nr)saveQueue.then(()=>apiJson('/api/game/reward',{method:'POST',body:JSON.stringify({game:g})})).then(p=>{accountProfile=p;if(el.isConnected&&el.querySelector('#roundReward'))el.querySelector('#roundReward').textContent=`+${p.gameReward} coins · Best ${st(g).best||0}`}).catch(e=>{if(el.isConnected&&el.querySelector('#roundReward'))el.querySelector('#roundReward').textContent='Reward not saved: '+e.message});
   else if($('#roundReward'))$('#roundReward').remove();
   $('#again').textContent='Play again';
   $('#again').onclick=()=>startGame(g);
   if(nx)$('#nxt').onclick=()=>{LV++;startGame(g)};
   $('#ex').onclick=()=>{playing=null;render()};
 }
-function startGame(g){({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide,mines,c4,hangman,hilo,stroop})[g]()}
+function startGame(g){beginGame();({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide,mines,c4,hangman,hilo,stroop})[g]()}
 
 /* Tic-Tac-Toe */
 function ttt(){
@@ -90,7 +117,7 @@ function mem(){
       const[a,b]=open;
       if(cards[a].e===cards[b].e){cards[a].d=cards[b].d=true;open=[];found++;paint2();
         if(found===pairCount)end('mem',moves<=ML,moves<=ML?`Cleared in ${moves} moves! 🎉`:`Cleared in ${moves} moves. Too slow for a win.`,Math.max(0,1000-moves*25))}
-      else{lock=true;setTimeout(()=>{open=[];lock=false;paint2()},700)}
+      else{lock=true;gameTimeout(()=>{open=[];lock=false;paint2()},700)}
     }
   }
   paint2();
@@ -101,7 +128,7 @@ function react(){
   frame('react','<button class="zone" id="z"></button>');
   const z=$('#z');
   function arm(){state='wait';z.style.background='#e5484d';z.textContent='Wait for green...';
-    timer=setTimeout(()=>{state='go';z.style.background='#1fa971';z.textContent='TAP!';t0=performance.now()},1500+Math.random()*2500)}
+    timer=gameTimeout(()=>{state='go';z.style.background='#1fa971';z.textContent='TAP!';t0=performance.now()},1500+Math.random()*2500)}
   z.onclick=()=>{
     if(state==='wait'){clearTimeout(timer);end('react',false,'Too early! 🙈')}
     else if(state==='go'){const ms=Math.round(performance.now()-t0);state='done';end('react',ms<TH,ms<TH?`${ms} ms. Lightning! ⚡`:`${ms} ms. Need under ${TH}.`,Math.max(0,1000-ms))}
@@ -218,7 +245,7 @@ function chess2(pvp){
     if(chk(wt))return;
     if(!pvp){
       busy=true;
-      setTimeout(()=>{
+      gameTimeout(()=>{
         if(!document.body.contains($('#bd')))return;
         const m=cpuPick(b);b=cmove(b,m[0],m[1]);wt=true;busy=false;paint();chk(true);
       },350);

@@ -20,9 +20,9 @@ function beat(){
     if(done)return;
     if(!document.body.contains($('#beatPads'))){done=true;clearInterval(beatTimer);clearTimeout(missTimer);return}
     clearTimeout(missTimer);lane=Math.floor(Math.random()*4);judged=false;const id=++serial;paint();snd(`t${lane}`);
-    missTimer=setTimeout(()=>{if(done||id!==serial||judged)return;if(!document.body.contains($('#beatPads'))){done=true;clearInterval(beatTimer);return}judged=true;misses++;streak=0;lane=-1;paint();if(misses>=6)finish(false,'Too many beats missed.')},windowMs);
+    missTimer=gameTimeout(()=>{if(done||id!==serial||judged)return;if(!document.body.contains($('#beatPads'))){done=true;clearInterval(beatTimer);return}judged=true;misses++;streak=0;lane=-1;paint();if(misses>=6)finish(false,'Too many beats missed.')},windowMs);
   };
-  paint();cue();beatTimer=setInterval(cue,beatMs);
+  paint();cue();beatTimer=gameInterval(cue,beatMs);
 }
 /* Boba Builder */
 function boba(){
@@ -31,16 +31,16 @@ function boba(){
   const colors={Strawberry:'#f36d9b',Mango:'#f2a644',Matcha:'#67b985',Taro:'#a47ad0'};
   const pick=items=>items[Math.floor(Math.random()*items.length)],makeOrder=()=>({tea:pick(menu.tea),flavour:pick(menu.flavour),ice:pick(menu.ice),topping:pick(menu.topping),name:pick(names)});
   let current=makeOrder(),chosen={},served=0,lives=3,score=0,deadline=0,done=false,timer=null;
-  frame('boba','<div class="msg" id="bobaHud"></div><section class="boba-order" id="bobaOrder"></section><section class="boba-work"><div class="boba-cup-wrap"><div class="boba-cup" id="bobaCup"><span class="boba-straw"></span><span class="boba-topping">● ● ●</span></div><b>Your cup</b><small id="bobaSummary">Choose each part of the drink.</small></div><div class="boba-controls" id="bobaControls"></div></section><div class="row"><button class="btn" id="serveBoba" type="button">Serve drink</button></div><p class="msg" id="bobaMessage" aria-live="polite"></p>');
+  frame('boba','<div class="scene-title"><small>CLOUD NINE TEA HOUSE</small><h2>A cup of something happy</h2><p>Shake up a little magic for your next guest.</p></div><div class="msg" id="bobaHud"></div><section class="boba-order" id="bobaOrder"></section><section class="boba-work"><div class="boba-cup-wrap"><div class="drink-preview" id="bobaCup"></div><b>Your cup</b><small id="bobaSummary">Choose each part of the drink.</small></div><div class="boba-controls" id="bobaControls"></div></section><div class="row"><button class="btn" id="serveBoba" type="button">Serve drink</button></div><p class="msg" id="bobaMessage" aria-live="polite"></p>');
   const seconds=()=>Math.max(12,23-LV*.8);
   const finish=(won,text)=>{if(done)return;done=true;clearInterval(timer);end('boba',won,text,score+served*35+LV*50)};
   const paint=()=>{
     $('#bobaHud').textContent=`Orders ${served}/${need} · Patience ${lives}♥ · ${Math.max(0,Math.ceil((deadline-Date.now())/1000))}s`;
-    $('#bobaOrder').innerHTML=`<div class="boba-customer">${custSVG(0,'#5b3a29','#ff8eb9',false)}<b>${current.name}</b></div><div class="boba-thought"><small>ORDER UP</small><b>${current.tea}</b><span>${current.flavour} · ${current.ice}</span><strong>${current.topping}</strong><div class="boba-target-cup" style="--drink:${colors[current.flavour]}">🧋</div></div>`;
-    $('#bobaControls').innerHTML=Object.entries(menu).map(([group,options])=>`<section class="boba-group"><b>${group[0].toUpperCase()+group.slice(1)}</b><div>${options.map(value=>`<button class="boba-choice ${chosen[group]===value?'on':''}" data-group="${group}" data-value="${value}" type="button">${value}</button>`).join('')}</div></section>`).join('');
+    $('#bobaOrder').innerHTML=`<div class="boba-customer">${custSVG(0,'#5b3a29','#ff8eb9',false)}<b>${current.name}</b></div><div class="boba-thought"><small>ORDER UP</small><b>${current.tea}</b><span>${current.flavour} · ${current.ice}</span><strong>${current.topping}</strong><div class="boba-target-cup">${drinkArt(current,"Customer’s order")}</div></div>`;
+    $('#bobaControls').innerHTML=Object.entries(menu).map(([group,options])=>`<section class="boba-group"><b>${group[0].toUpperCase()+group.slice(1)}</b><div>${options.map(value=>`<button class="boba-choice ${chosen[group]===value?'on':''}" data-group="${group}" data-value="${value}" type="button">${group==='flavour'?`<i class="flavour-dot" style="background:${colors[value]}"></i>`:group==='topping'?`<i class="topping-swatch ${value.toLowerCase()}"></i>`:''}${value}</button>`).join('')}</div></section>`).join('');
     $('#bobaControls').querySelectorAll('[data-group]').forEach(button=>button.onclick=()=>{chosen[button.dataset.group]=button.dataset.value;paint()});
     const count=Object.keys(chosen).length;$('#bobaSummary').textContent=count?Object.values(chosen).join(' · '):'Choose each part of the drink.';
-    $('#bobaCup').style.setProperty('--drink',colors[chosen.flavour||current.flavour]);
+    $('#bobaCup').innerHTML=drinkArt(chosen);$('#serveBoba').disabled=Object.keys(chosen).length<4;
   };
   const next=()=>{served++;if(served>=need)return finish(true,'Every drink made just right! 🧋');current=makeOrder();chosen={};deadline=Date.now()+seconds()*1000;$('#bobaMessage').textContent='Next customer, coming up!';paint()};
   $('#serveBoba').onclick=()=>{
@@ -50,7 +50,7 @@ function boba(){
     else{lives--;snd('buzz');chosen={};deadline=Date.now()+seconds()*1000;$('#bobaMessage').textContent='That recipe missed the order. Check the picture and try again.';if(lives<=0)return finish(false,'The customers ran out of patience.');paint()}
   };
   deadline=Date.now()+seconds()*1000;paint();
-  timer=setInterval(()=>{if(!document.body.contains($('#bobaHud'))){clearInterval(timer);return}if(Date.now()>=deadline){lives--;if(lives<=0)return finish(false,'The customers ran out of patience.');current=makeOrder();chosen={};deadline=Date.now()+seconds()*1000;$('#bobaMessage').textContent='A customer left. Here comes the next order.';paint()}else $('#bobaHud').textContent=`Orders ${served}/${need} · Patience ${lives}♥ · ${Math.max(0,Math.ceil((deadline-Date.now())/1000))}s`},200);
+  timer=gameInterval(()=>{if(!document.body.contains($('#bobaHud'))){clearInterval(timer);return}if(Date.now()>=deadline){lives--;if(lives<=0)return finish(false,'The customers ran out of patience.');current=makeOrder();chosen={};deadline=Date.now()+seconds()*1000;$('#bobaMessage').textContent='A customer left. Here comes the next order.';paint()}else $('#bobaHud').textContent=`Orders ${served}/${need} · Patience ${lives}♥ · ${Math.max(0,Math.ceil((deadline-Date.now())/1000))}s`},200);
 }
 /* Fruit Slice */
 function fruit(){
@@ -71,7 +71,7 @@ function fruit(){
   cv.onpointerdown=e=>{e.preventDefault();dragging=true;cv.setPointerCapture(e.pointerId);const p=point(e);trail=[p];sliceAt(p)};
   cv.onpointermove=e=>{if(!dragging)return;const p=point(e);trail.push(p);if(trail.length>9)trail.shift();sliceAt(p)};
   cv.onpointerup=()=>{dragging=false;trail=[]};cv.onpointercancel=()=>{dragging=false;trail=[]};
-  spawnTimer=setInterval(()=>{if(!cv.isConnected){clearInterval(spawnTimer);return}const count=1+(Math.random()<.45?1:0);for(let i=0;i<count;i++){const bomb=Math.random()<Math.min(.18+LV*.006,.36);objects.push({x:40+Math.random()*(W-80),y:H+20,vx:(Math.random()-.5)*3,vy:-9-Math.random()*4,r:25,bomb,icon:bomb?'💣':icons[Math.floor(Math.random()*icons.length)],cut:false})}},Math.max(430,780-LV*28));
+  spawnTimer=gameInterval(()=>{if(!cv.isConnected){clearInterval(spawnTimer);return}const count=1+(Math.random()<.45?1:0);for(let i=0;i<count;i++){const bomb=Math.random()<Math.min(.18+LV*.006,.36);objects.push({x:40+Math.random()*(W-80),y:H+20,vx:(Math.random()-.5)*3,vy:-9-Math.random()*4,r:25,bomb,icon:bomb?'💣':icons[Math.floor(Math.random()*icons.length)],cut:false})}},Math.max(430,780-LV*28));
   const draw=now=>{
     if(done)return;if(!cv.isConnected){stop();return}
     const dt=Math.min(2.4,(now-last)/16.67||1);last=now;
@@ -82,9 +82,9 @@ function fruit(){
     if(misses>=7)return finish(false,'Too many fruits missed.');
     if(trail.length>1){ctx.beginPath();ctx.moveTo(trail[0].x,trail[0].y);trail.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.strokeStyle='#ff5fa7';ctx.lineWidth=6;ctx.lineCap='round';ctx.stroke()}
     $('#fruitHud').textContent=`Sliced ${sliced}/${goal} · Bombs ${lives}♥ · ${Math.ceil(remain)}s`;
-    raf=requestAnimationFrame(draw);
+    raf=gameAnimation(draw);
   };
-  raf=requestAnimationFrame(draw);
+  raf=gameAnimation(draw);
 }
 /* Mini Golf */
 function golf(){
@@ -120,9 +120,9 @@ function golf(){
     ctx.beginPath();ctx.arc(ball.x,ball.y,R,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#8d6dff';ctx.lineWidth=2;ctx.stroke();
     $('#golfHud').textContent=`Strokes ${strokes}/${maxStrokes} · Par ${par}`;
     if(strokes>=maxStrokes&&speed<.08)return finish(false,'That hole was a tough one.');
-    raf=requestAnimationFrame(draw);
+    raf=gameAnimation(draw);
   };
-  raf=requestAnimationFrame(draw);
+  raf=gameAnimation(draw);
 }
 /* Paw Catcher */
 function cat(){
@@ -136,7 +136,7 @@ function cat(){
   cv.onpointerdown=e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);moveTo(e);cv.focus({preventScroll:true})};
   cv.onpointermove=e=>{if(e.buttons||e.pointerType==='touch')moveTo(e)};
   cv.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();kittyX=Math.max(36,Math.min(W-36,kittyX+(e.key==='ArrowLeft'?-38:38)))}};
-  spawnTimer=setInterval(()=>{
+  spawnTimer=gameInterval(()=>{
     if(!cv.isConnected){clearInterval(spawnTimer);return}
     const hazard=Math.random()<Math.min(.12+LV*.006,.3);
     items.push({x:30+Math.random()*(W-60),y:-24,vy:2.1+Math.random()*.9+LV*.12,icon:hazard?'🫧':good[Math.floor(Math.random()*good.length)],hazard});
@@ -156,15 +156,16 @@ function cat(){
     ctx.font='65px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🐈',kittyX,H-60);
     ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(kittyX,H-19,38,13,0,0,Math.PI*2);ctx.fill();
     $('#catHud').textContent=`Caught ${caught}/${goal} · Bath bubbles ${lives}♥ · ${Math.ceil(remain)}s`;
-    raf=requestAnimationFrame(draw);
+    raf=gameAnimation(draw);
   };
-  raf=requestAnimationFrame(draw);
+  raf=gameAnimation(draw);
 }
 /* Doodle Studio */
 function sketch(){
   frame('sketch','<div class="sketch-tools"><div class="sketch-colors" id="sketchColors" aria-label="Drawing colours"></div><label class="brush-control">Brush <input id="brushSize" type="range" min="2" max="36" value="8"><span id="brushValue">8</span></label><button class="btn ghost" id="undoDraw" type="button" title="Undo last stroke">↶ Undo</button><button class="btn ghost" id="clearDraw" type="button">Clear</button><button class="btn" id="saveDraw" type="button">Save PNG</button></div><canvas id="sketchCanvas" width="960" height="640" aria-label="Blank drawing canvas"></canvas>');
   const canvas=$('#sketchCanvas'),ctx=canvas.getContext('2d',{willReadFrequently:true}),colors=['#251d23','#ff4d94','#8d6dff','#3b82f6','#24a875','#ffb703','#f26f4d','#ffffff'];
-  let color=colors[1],size=8,drawing=false,history=[];
+  let color=colors[1],size=8,drawing=false,history=[],closed=false;
+  const downloadUrls=new Set();gameCleanup(()=>{closed=true;downloadUrls.forEach(url=>URL.revokeObjectURL(url));downloadUrls.clear()});
   const snapshot=()=>{history.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(history.length>30)history.shift();$('#undoDraw').disabled=false};
   const point=e=>{const rect=canvas.getBoundingClientRect();return{x:(e.clientX-rect.left)*canvas.width/rect.width,y:(e.clientY-rect.top)*canvas.height/rect.height}};
   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -176,7 +177,7 @@ function sketch(){
   canvas.onpointerup=()=>{drawing=false};canvas.onpointercancel=()=>{drawing=false};
   $('#undoDraw').onclick=()=>{const previous=history.pop();if(previous)ctx.putImageData(previous,0,0);$('#undoDraw').disabled=!history.length};
   $('#clearDraw').onclick=()=>{snapshot();ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height)};
-  $('#saveDraw').onclick=()=>canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='arcade-doodle.png';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},'image/png');
+  $('#saveDraw').onclick=()=>canvas.toBlob(blob=>{if(!blob||closed)return;const url=URL.createObjectURL(blob),link=document.createElement('a');downloadUrls.add(url);link.href=url;link.download='arcade-doodle.png';link.click();gameTimeout(()=>{URL.revokeObjectURL(url);downloadUrls.delete(url)},1000)},'image/png');
   $('#undoDraw').disabled=true;
 }
 /* Bubble Pop */
@@ -211,7 +212,7 @@ function bubble(){
   cv.onpointerdown=e=>{if(!pr)aimAt(e)};cv.onpointermove=e=>{if(aim)aimAt(e)};
   cv.onpointerup=()=>{if(aim&&!pr){pr={x:160,y:390,vx:aim.vx,vy:aim.vy};snd('swoosh')}aim=null};
   cv.onpointercancel=()=>{aim=null};
-  const t=setInterval(()=>{
+  const t=gameInterval(()=>{
     if(!document.body.contains(cv)){clearInterval(t);return}
     if(pr)for(let i=0;i<3&&pr;i++){
       pr.x+=pr.vx;pr.y+=pr.vy;
@@ -237,7 +238,7 @@ function race(){
   const mvx=e=>{const r=cv.getBoundingClientRect();tx=(e.clientX-r.left)/r.width*W};
   cv.onpointerdown=mvx;cv.onpointermove=e=>{if(e.buttons||e.pointerType==='touch')mvx(e)};
   const car=(x,y,col)=>{c.fillStyle=col;c.fillRect(x-18,y-32,36,64);c.fillStyle='#cfefff';c.fillRect(x-12,y-14,24,16);c.fillStyle='#0004';c.fillRect(x-18,y+22,36,8)};
-  const t=setInterval(()=>{
+  const t=gameInterval(()=>{
     if(!document.body.contains(cv)){clearInterval(t);return}
     tick++;px+=(tx-px)*.18;px=Math.max(30,Math.min(W-30,px));dist+=sp;
     if(tick%Math.max(16,48-LV*3)===0)cars.push({x:40+Math.random()*(W-80),y:-50,coin:Math.random()<.3});

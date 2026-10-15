@@ -73,3 +73,48 @@ test('existing multiplayer joins, moves and next round remain playable',async()=
   }
  }
 });
+
+test('online Jenga validates turns, blocks, concurrent moves, collapse and score ownership',async()=>{
+ await ready;
+ const host=await api('/api/login',{name:'WalletTest',pin:'123456'}),guest=await api('/api/login',{name:'ShopFixture',pin:'123456'});
+ token=host.token;const room=await api('/api/rooms',{game:'jenga'});assert.equal(room.game,'jenga');assert.equal(room.blocks.length,9);
+ token=guest.token;await api('/api/rooms/'+room.code+'/join',{});
+ assert.equal((await api('/api/rooms/'+room.code+'/move',{row:1,col:0})).status,409);
+ token=host.token;
+ for(const row of [0,8,-1,1.5])assert.equal((await api('/api/rooms/'+room.code+'/move',{row,col:0})).status,400);
+ const attempts=await Promise.all([api('/api/rooms/'+room.code+'/move',{row:1,col:1}),api('/api/rooms/'+room.code+'/move',{row:2,col:0})]);
+ assert.equal(attempts.filter(x=>x.turn==='guest').length,1);assert.equal(attempts.filter(x=>x.status===409).length,1);
+ const after=await api('/api/rooms/'+room.code);assert.equal(after.pulls,1);
+ // Make a separate deterministic tower: middle first, then edge; the guest tips it.
+ const second=await api('/api/rooms',{game:'jenga'});token=guest.token;await api('/api/rooms/'+second.code+'/join',{});
+ token=host.token;await api('/api/rooms/'+second.code+'/move',{row:1,col:1});
+ token=guest.token;const lost=await api('/api/rooms/'+second.code+'/move',{row:1,col:0});
+ assert.equal(lost.status,'complete');assert.equal(lost.winner,'host');assert.equal(lost.fallen,true);
+ assert.equal((await api('/api/rooms/'+second.code+'/move',{row:2,col:0})).status,409);
+ token=host.token;const players=await (await fetch('http://localhost:'+port+'/api/players')).json();assert.equal(players.find(p=>p.id===host.id).data.stats.jenga.w,1);
+ const reward=await api('/api/game/reward',{game:'jenga'});assert.ok(reward.gameReward>0);
+ assert.equal((await api('/api/game/reward',{game:'jenga'})).gameReward,0);
+});
+
+test('four new games save scores, reward coins once, and count toward daily tasks',async()=>{
+ await ready;const player=await api('/api/register',{name:'PocketTester',pin:'123456'});token=player.token;
+ const stats={};for(const game of ['cloudhop','jellystack','startrail','garden']){
+  stats[game]={p:1,w:1,pts:200,best:200,lv:['startrail','garden'].includes(game)?2:1};
+  assert.equal((await api('/api/players/'+player.id,{stats,following:[]},'PUT')).status,200);
+  const reward=await api('/api/game/reward',{game});assert.ok(reward.gameReward>=22);
+  assert.equal((await api('/api/game/reward',{game})).gameReward,0);
+  await api('/api/daily/activity',{game,won:true});
+ }
+ assert.equal((await api('/api/profile/me')).daily.challenges.find(x=>x.id==='try-three').progress,3);
+});
+
+test('global and personal chats preserve unicode and only expose DMs to participants',async()=>{
+ await ready;const a=await api('/api/login',{name:'WalletTest',pin:'123456'}),b=await api('/api/login',{name:'ShopFixture',pin:'123456'}),outsider=await api('/api/login',{name:'PocketTester',pin:'123456'});
+ token=a.token;const text='A little hello 🐰🌷 <script>not markup</script>';
+ assert.equal((await api('/api/chat',{text})).status,201);
+ assert.equal((await api('/api/direct/'+b.id,{text})).status,201);
+ token=b.token;assert.equal((await api('/api/chat')).messages.at(-1).text,text);
+ assert.equal((await api('/api/direct/'+a.id)).messages.at(-1).text,text);
+ token=outsider.token;assert.equal((await api('/api/direct/'+a.id)).messages.length,0);
+ token='';assert.equal((await api('/api/direct/'+a.id)).status,401);
+});

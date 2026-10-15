@@ -190,130 +190,122 @@ async function boothSave(){
   }
   c.toBlob(b=>{const a=document.createElement('a');a.download='arcade-photo-booth-duo.jpg';a.href=URL.createObjectURL(b);a.click()},'image/jpeg',.92);
 }
+let roomAction=null;
+function stopRoomPolling(){if(roomPoll)clearInterval(roomPoll);roomPoll=null;roomAction=null}
 function renderOnline(){
-  if(roomPoll){clearInterval(roomPoll);roomPoll=null}
-  if(activeRoomCode){renderOnlineRoom();return}
-  $('#view').innerHTML=`<h2>Play with a friend</h2><p class="sub">Start a private room, send the six-letter code, and play from different devices.</p><section class="card"><b>Create an invite room</b><p class="sub">Online mode is ready for Tic-Tac-Toe, Rock-Paper-Scissors and a two-player Photo Booth.</p><div class="online-form"><select id="roomGame" aria-label="Choose an online game"><option value="ttt">Tic-Tac-Toe</option><option value="rps">Rock-Paper-Scissors</option><option value="booth">Photo Booth (2 players)</option></select><button class="btn" id="createRoom">Create room</button></div></section><section class="card"><b>Join a friend's room</b><p class="sub">Ask your friend for their six-character room code.</p><div class="online-form"><input id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC234" aria-label="Room code"><button class="btn" id="joinRoom">Join room</button></div><div id="onlineStatus" class="online-status" aria-live="polite"></div></section><section class="card"><b>How it works</b><p>Both players need an Arcade account and must open the same hosted Arcade site. Rooms sync through the server, so you can play from different places.</p></section>`;
-  $('#joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'')};
-  $('#createRoom').onclick=()=>openOnlineRoom($('#roomGame').value);
-  $('#joinRoom').onclick=()=>joinOnlineRoom($('#joinCode').value);
-}
-async function openOnlineRoom(game){
-  const status=$('#onlineStatus');if(status)status.textContent='Creating your invite room…';
-  try{const room=await apiJson('/api/rooms',{method:'POST',body:JSON.stringify({game})});activeRoomCode=room.code;render()}
-  catch(e){if(status)status.textContent=e.message;else{tab='online';activeRoomCode='';render();$('#onlineStatus').textContent=e.message}}
-}
-async function joinOnlineRoom(code){
-  const status=$('#onlineStatus');if(!code||code.length!==6){status.textContent='Enter the six-character room code.';return}
-  status.textContent='Joining room…';
-  try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}/join`,{method:'POST',body:'{}'});activeRoomCode=room.code;render()}
-  catch(e){status.textContent=e.message}
+ stopRoomPolling();if(activeRoomCode){renderOnlineRoom();return}
+ let selected='jenga',opening=false;
+ const options=[['jenga','Jenga'],['ttt','Tic-Tac-Toe'],['rps','Rock Paper Scissors'],['booth','Photo Booth']];
+ $('#view').innerHTML=`<div class="online-hero">${scenePet('rabbit')}<div><h2>The together club</h2><p>A cozy room for two. Pick a game, share the code, and make a little time for each other.</p></div></div><section class="card"><b>Choose your playdate</b><div class="online-game-options">${options.map(([id,name])=>`<button class="online-pick ${id===selected?'on':''}" data-online-game="${id}">${pic(id==='booth'?'photo':id)}<span>${name}</span></button>`).join('')}</div><button class="btn" id="createRoom">Create a room</button></section><section class="card"><b>Got an invitation?</b><p class="sub">Enter your friend’s six-character room code.</p><div class="online-form"><input id="joinCode" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC234" aria-label="Room code"><button class="btn" id="joinRoom">Join room</button></div></section><p id="onlineStatus" class="online-status" role="status"></p>`;
+ const status=$('#onlineStatus'),create=$('#createRoom'),join=$('#joinRoom');
+ $('#view').querySelectorAll('[data-online-game]').forEach(b=>b.onclick=()=>{selected=b.dataset.onlineGame;$('#view').querySelectorAll('[data-online-game]').forEach(x=>x.classList.toggle('on',x===b))});
+ $('#joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'')};
+ async function open(code){
+  if(opening)return;if(code!==null&&code.length!==6){status.textContent='Enter the six-character code.';return}
+  opening=true;create.disabled=join.disabled=true;status.textContent=code===null?'Setting up your playdate…':'Joining your friend…';
+  try{const room=await apiJson(code===null?'/api/rooms':`/api/rooms/${encodeURIComponent(code)}/join`,{method:'POST',body:JSON.stringify(code===null?{game:selected}:{})});if(!status.isConnected)return;activeRoomCode=room.code;render()}
+  catch(e){if(status.isConnected)status.textContent=e.message}
+  finally{opening=false;if(status.isConnected)create.disabled=join.disabled=false}
+ }
+ create.onclick=()=>open(null);join.onclick=()=>open($('#joinCode').value);
 }
 function renderOnlineRoom(){
-  const code=activeRoomCode;
-  $('#view').innerHTML=`<section class="card"><div class="top"><div><b>Invite room</b><div class="room-code">${esc(code)}</div></div><button class="btn ghost" id="leaveRoom">Leave room</button></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="copyRoom">Copy code</button><span id="roomStatus" class="online-status" style="flex:1;text-align:left">Connecting to the room…</span></div><div id="roomContent"></div></section>`;
-  const content=$('#roomContent');
-  const paint=room=>{
-    if(tab!=='online'||activeRoomCode!==code||!document.body.contains(content))return;
-    const opponent=room.role==='host'?room.guestName:room.hostName;
-    if(room.game==='booth'&&room.status!=='waiting'){boothPaint(room,content,code);$('#roomStatus').textContent='Connected with '+(opponent||'your friend')+'.';return}
-    let html='';
-    if(room.status==='waiting')html=`<div class="empty-art">Waiting for a friend to join. Share code <b>${esc(room.code)}</b>.</div>`;
-    else if(room.game==='ttt'){
-      const mark=room.role==='host'?'X':'O',canMove=room.status==='playing'&&room.turn===room.role;
-      const message=room.status==='complete'?(room.draw?'Draw game.':room.winner===room.role?'You won! 🎉':'Your friend won this round.'):`${esc(opponent||'Your friend')} joined · ${canMove?'Your turn':'Waiting for your friend'}`;
-      html=`<p class="online-status">${message}</p><div class="online-board">${room.board.map((v,i)=>`<button data-room-cell="${i}" aria-label="Square ${i+1}" ${!canMove||v?'disabled':''}>${esc(v||'')}</button>`).join('')}</div><p class="online-status">You are ${mark}. ${room.status==='complete'?'':`Room ${esc(room.code)} stays open while you play.`}</p>`;
-    }else{
-      const hands={rock:'🪨 Rock',paper:'📄 Paper',scissors:'✂️ Scissors'},result=room.lastResult;
-      const score=`${room.scores?.[room.role]||0} – ${room.scores?.[room.role==='host'?'guest':'host']||0}`;
-      let message=room.status==='complete'?(room.winner===room.role?'You won the match! 🎉':'Your friend won the match.'):`Round ${room.round} · You ${score} · first to 3`;
-      if(result)message+=` · ${hands[result.host]} vs ${hands[result.guest]}${result.winner==='draw'?' — draw':result.winner===room.role?' — you score!':' — friend scores'}`;
-      else if(room.myPick)message+=room.opponentReady?' · Revealing picks…':' · Pick locked in; waiting for your friend';
-      html=`<p class="online-status">${message}</p>${room.status==='playing'&&!result&&!room.myPick?`<div class="row">${Object.entries(hands).map(([choice,label])=>`<button class="btn" data-room-choice="${choice}">${label}</button>`).join('')}</div>`:''}${result&&room.status==='playing'?'<div class="row"><button class="btn" id="nextRoomRound">Next round</button></div>':''}`;
-    }
-    content.innerHTML=html;
-    if(room.game==='ttt')content.querySelectorAll('[data-room-cell]').forEach(b=>b.onclick=()=>sendRoomMove(code,{index:+b.dataset.roomCell}));
-    content.querySelectorAll('[data-room-choice]').forEach(b=>b.onclick=()=>sendRoomMove(code,{choice:b.dataset.roomChoice}));
-    const next=$('#nextRoomRound');if(next)next.onclick=()=>sendRoomMove(code,{action:'next'});
-    $('#roomStatus').textContent=room.status==='waiting'?'Waiting for your friend…':room.status==='complete'?'Match finished.':'Connected with '+(opponent||'your friend')+'.';
-  };
-  const load=async()=>{try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);paint(room)}catch(e){if(tab==='online'&&activeRoomCode===code&&$('#roomStatus'))$('#roomStatus').textContent=e.message}};
-  const copy=$('#copyRoom');copy.onclick=async()=>{try{await navigator.clipboard.writeText(code);$('#roomStatus').textContent='Room code copied.'}catch(e){$('#roomStatus').textContent='Share this room code: '+code}};
-  $('#leaveRoom').onclick=()=>{stopBooth();activeRoomCode='';if(roomPoll){clearInterval(roomPoll);roomPoll=null}render()};
-  load();roomPoll=setInterval(load,1800);
-}
-async function sendRoomMove(code,move){
-  try{await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify(move)});const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);if(activeRoomCode===code){const status=$('#roomStatus');if(status)status.textContent=room.status==='complete'?'Match finished.':'Move sent.';renderOnlineRoomContentRefresh(room)}}
-  catch(e){const status=$('#roomStatus');if(status)status.textContent=e.message}
-}
-function renderOnlineRoomContentRefresh(room){
-  // Repaint the current game state without resetting the invite controls or polling timer.
-  const code=activeRoomCode,content=$('#roomContent');if(!content||!room)return;
-  const opponent=room.role==='host'?room.guestName:room.hostName;
-  if(room.status==='waiting'){content.innerHTML=`<div class="empty-art">Waiting for a friend to join. Share code <b>${esc(room.code)}</b>.</div>`;return}
-  if(room.game==='ttt'){
-    const mark=room.role==='host'?'X':'O',canMove=room.status==='playing'&&room.turn===room.role;
-    const message=room.status==='complete'?(room.draw?'Draw game.':room.winner===room.role?'You won! 🎉':'Your friend won this round.'):`${esc(opponent||'Your friend')} joined · ${canMove?'Your turn':'Waiting for your friend'}`;
-    content.innerHTML=`<p class="online-status">${message}</p><div class="online-board">${room.board.map((v,i)=>`<button data-room-cell="${i}" aria-label="Square ${i+1}" ${!canMove||v?'disabled':''}>${esc(v||'')}</button>`).join('')}</div><p class="online-status">You are ${mark}. ${room.status==='complete'?'':`Room ${esc(code)} stays open while you play.`}</p>`;
-    content.querySelectorAll('[data-room-cell]').forEach(b=>b.onclick=()=>sendRoomMove(code,{index:+b.dataset.roomCell}));return;
+ stopRoomPolling();const code=activeRoomCode;
+ $('#view').innerHTML=`<section class="card"><div class="top"><div><small>YOUR LITTLE PLAYDATE</small><div class="room-code">${esc(code)}</div></div><button class="btn ghost sm" id="leaveRoom">Leave</button></div><div class="row"><button class="btn sm" id="copyRoom">Copy invite code</button></div><p id="roomStatus" class="online-status" role="status">Connecting…</p><div id="roomContent"></div></section>`;
+ const content=$('#roomContent'),status=$('#roomStatus');let signature='',busy=false,loading=false,request=0;
+ const alive=()=>tab==='online'&&activeRoomCode===code&&content.isConnected;
+ function paint(room){
+  if(!alive())return;
+  const nextSignature=JSON.stringify(room);if(signature===nextSignature)return;signature=nextSignature;
+  const opponent=room.role==='host'?room.guestName:room.hostName,canMove=room.status==='playing'&&room.turn===room.role;
+  const seats=`<div class="room-seats"><div class="room-seat">${scenePet('rabbit')}<b>${esc(room.hostName)}</b><small>${room.role==='host'?'You':'Friend'}</small></div><span class="room-vs">WITH</span><div class="room-seat">${scenePet('cat','#f8e0c8')}<b>${esc(room.guestName||'An open seat')}</b><small>${room.guestName?(room.role==='guest'?'You':'Friend'):'Invite a friend'}</small></div></div>`;
+  if(room.game==='booth'&&room.status!=='waiting'){boothPaint(room,content,code);status.textContent='Connected with '+(opponent||'your friend')+'.';return}
+  let html=seats;
+  if(room.status==='waiting')html+='<div class="chat-empty">Your friend’s seat is ready.<br>Share the code above to invite them.</div>';
+  else if(room.game==='jenga'){
+   html+=`<div class="scene-title"><small>THE BALANCE CLUB</small><h2>${room.status==='complete'?(room.winner===room.role?'You kept it steady!':'A tiny tumble!'):canMove?'Your turn to pull':'Your friend is thinking…'}</h2></div><div class="scene-hud"><span>Blocks pulled <b>${room.pulls}</b></span><span>${room.status==='complete'?'Round finished':canMove?'Your turn':'Friend’s turn'}</span></div>${towerArt(room.blocks,canMove,room.fallen)}<p class="scene-tip">Leave a middle support in thin layers. A single edge block tips the tower.</p>`;
+  }else if(room.game==='ttt'){
+   html+=`<p class="online-status">${room.status==='complete'?(room.draw?'A friendly draw.':room.winner===room.role?'You won!':'Your friend won this round.'):canMove?'Your turn. Make your mark!':'Your friend is thinking…'}</p><div class="online-board">${room.board.map((v,i)=>`<button data-room-cell="${i}" aria-label="Square ${i+1}" ${!canMove||v?'disabled':''}>${esc(v||'')}</button>`).join('')}</div><p class="scene-tip">You are ${room.role==='host'?'X':'O'}.</p>`;
+  }else{
+   const hands={rock:'🪨 Rock',paper:'📄 Paper',scissors:'✂️ Scissors'},result=room.lastResult,other=room.role==='host'?'guest':'host';
+   html+=`<div class="scene-hud"><span>You <b>${room.scores[room.role]}</b></span><span>Friend <b>${room.scores[other]}</b></span></div><p class="online-status">${room.status==='complete'?(room.winner===room.role?'You won the match!':'Your friend won the match.'):result?(result.winner==='draw'?'A matching pair!':result.winner===room.role?'You score!':'Friend scores!'):room.myPick?'Pick tucked away. Waiting for your friend…':`Round ${room.round} · First to 3`}</p>`;
+   if(result)html+=`<p class="msg">${hands[result.host]} &nbsp; ${hands[result.guest]}</p>`;
+   if(room.status==='playing'&&!result&&!room.myPick)html+=`<div class="row">${Object.entries(hands).map(([choice,label])=>`<button class="btn" data-room-choice="${choice}">${label}</button>`).join('')}</div>`;
+   if(result&&room.status==='playing')html+='<div class="row"><button class="btn" id="nextRoomRound">Next round</button></div>';
   }
-  const hands={rock:'🪨 Rock',paper:'📄 Paper',scissors:'✂️ Scissors'},result=room.lastResult,score=`${room.scores?.[room.role]||0} – ${room.scores?.[room.role==='host'?'guest':'host']||0}`;
-  let message=room.status==='complete'?(room.winner===room.role?'You won the match! 🎉':'Your friend won the match.'):`Round ${room.round} · You ${score} · first to 3`;
-  if(result)message+=` · ${hands[result.host]} vs ${hands[result.guest]}${result.winner==='draw'?' — draw':result.winner===room.role?' — you score!':' — friend scores'}`;
-  else if(room.myPick)message+=room.opponentReady?' · Revealing picks…':' · Pick locked in; waiting for your friend';
-  content.innerHTML=`<p class="online-status">${message}</p>${room.status==='playing'&&!result&&!room.myPick?`<div class="row">${Object.entries(hands).map(([choice,label])=>`<button class="btn" data-room-choice="${choice}">${label}</button>`).join('')}</div>`:''}${result&&room.status==='playing'?'<div class="row"><button class="btn" id="nextRoomRound">Next round</button></div>':''}`;
-  content.querySelectorAll('[data-room-choice]').forEach(b=>b.onclick=()=>sendRoomMove(code,{choice:b.dataset.roomChoice}));
-  const next=$('#nextRoomRound');if(next)next.onclick=()=>sendRoomMove(code,{action:'next'});
+  content.innerHTML=html;status.textContent=room.status==='waiting'?'Waiting for your friend…':room.status==='complete'?'Playdate complete. Leave to start another.':'Connected with '+(opponent||'your friend')+'.';
+  content.querySelectorAll('[data-block-row]').forEach(b=>b.onclick=()=>roomAction({row:+b.dataset.blockRow,col:+b.dataset.blockCol}));
+  content.querySelectorAll('[data-room-cell]').forEach(b=>b.onclick=()=>roomAction({index:+b.dataset.roomCell}));
+  content.querySelectorAll('[data-room-choice]').forEach(b=>b.onclick=()=>roomAction({choice:b.dataset.roomChoice}));
+  const next=content.querySelector('#nextRoomRound');if(next)next.onclick=()=>roomAction({action:'next'});
+ }
+ async function load(){
+  if(!alive()||loading||busy||document.hidden)return;loading=true;const seq=++request;
+  try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}`);if(seq===request)paint(room)}catch(e){if(alive())status.textContent='Reconnecting… '+e.message}finally{loading=false}
+ }
+ roomAction=async move=>{
+  if(!alive()||busy)return;busy=true;++request;content.querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{const room=await apiJson(`/api/rooms/${encodeURIComponent(code)}/move`,{method:'POST',body:JSON.stringify(move)});signature='';paint(room)}
+  catch(e){if(alive()){signature='';try{paint(await apiJson(`/api/rooms/${encodeURIComponent(code)}`))}catch(_){}status.textContent=e.message}}
+  finally{busy=false}
+ };
+ $('#copyRoom').onclick=async()=>{try{await navigator.clipboard.writeText(code);if(alive())status.textContent='Invite code copied!'}catch(e){if(alive())status.textContent='Share this code: '+code}};
+ $('#leaveRoom').onclick=()=>{stopBooth();stopRoomPolling();activeRoomCode='';render()};
+ load();roomPoll=setInterval(load,1500);
 }
+let chatCleanup=null;
+function stopChat(){if(chatCleanup)chatCleanup();chatCleanup=null}
 async function renderChat(){
-  const API=window.ARCADE_API||'';
-  let mode='global',peer='',people=[],request=0;
-  const token=()=>localStorage.getItem('ah_token')||'';
-  const draftKey=()=>`ah_chat_draft_${myId}_${mode}_${peer}`;
-  const saveDraft=()=>{try{sessionStorage.setItem(draftKey(),$('#chatInput').value)}catch(e){}};
-  $('#view').innerHTML=`<div class="card feature-card chatbox"><div class="top"><b>Arcade Chat</b><span style="color:var(--mute)">Global and personal messages</span></div><div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn" id="globalMode" type="button">Global</button><button class="btn ghost" id="personalMode" type="button">Personal</button></div><label id="peerRow" style="display:none;margin:0 0 9px">Chat with <select id="chatPeer" style="margin-left:6px;max-width:70%;text-align:left"></select></label><div class="chatlog" id="chatlog" aria-live="polite"><div class="empty-art">Loading messages…</div></div><div class="composer"><input id="chatInput" maxlength="300" autocomplete="off" placeholder="Write a message"><button class="btn ghost" id="micChat" type="button">Mic</button><button class="btn" id="sendChat" type="button">Send</button></div><small id="chatStatus" style="color:var(--mute);min-height:18px"></small></div>`;
-  const paintMode=()=>{
-    $('#globalMode').classList.toggle('ghost',mode!=='global');$('#personalMode').classList.toggle('ghost',mode!=='personal');
-    $('#peerRow').style.display=mode==='personal'?'block':'none';
-    const input=$('#chatInput');try{input.value=sessionStorage.getItem(draftKey())||''}catch(e){input.value=''}
-    load();
-  };
-  async function load(){
-    const seq=++request,view=$('#view'),log=$('#chatlog');if(!log)return;
-    const path=mode==='global'?'/api/chat':peer?`/api/direct/${encodeURIComponent(peer)}`:'';
-    if(!path){log.innerHTML='<div class="empty-art">Choose a player to start a personal chat.</div>';return}
-    try{
-      const response=await fetch(API+path,{cache:'no-store',headers:mode==='global'?{}:{Authorization:'Bearer '+token()}});
-      const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load messages.');
-      if(seq!==request||!view.contains(log))return;
-      const nearBottom=log.scrollHeight-log.scrollTop-log.clientHeight<48;
-      const messages=data.messages||[];log.innerHTML=messages.length?messages.map(m=>`<div class="bubble ${m.senderId===myId||m.id===myId?'me':''}"><b>${esc(m.name)}</b><div>${esc(m.text)}</div></div>`).join(''):'<div class="empty-art">'+(mode==='global'?'No messages yet. Start the conversation.':'No messages yet. Say hello!')+'</div>';
-      if(nearBottom)log.scrollTop=log.scrollHeight;$('#chatStatus').textContent='';
-    }catch(e){if(seq===request&&view.contains(log))$('#chatStatus').textContent=e.message||'Chat is temporarily unavailable.'}
-  }
-  $('#chatInput').oninput=saveDraft;
-  $('#chatInput').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#sendChat').click()}};
-  $('#sendChat').onclick=async()=>{
-    const input=$('#chatInput'),text=input.value.trim();if(!text)return;
-    const direct=mode==='personal';if(direct&&!peer){$('#chatStatus').textContent='Choose a player first.';return}
-    $('#sendChat').disabled=true;$('#chatStatus').textContent='Sending…';
-    try{
-      const response=await fetch(API+(direct?`/api/direct/${encodeURIComponent(peer)}`:'/api/chat'),{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token()},body:JSON.stringify({text})});
-      const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Message could not be sent.');
-      input.value='';saveDraft();$('#chatStatus').textContent='';await load();input.focus({preventScroll:true});
-    }catch(e){$('#chatStatus').textContent=e.message||'Message could not be sent.'}
-    finally{$('#sendChat').disabled=false}
-  };
-  $('#globalMode').onclick=()=>{saveDraft();mode='global';paintMode()};
-  $('#personalMode').onclick=()=>{saveDraft();mode='personal';paintMode()};
-  $('#micChat').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('#chatInput').placeholder='Voice input is not supported here';return}const recognition=new SR();recognition.lang='en-IN';recognition.interimResults=false;recognition.onresult=e=>{$('#chatInput').value=($('#chatInput').value+' '+e.results[0][0].transcript).trim();saveDraft()};recognition.start()};
-  $('#chatPeer').onchange=e=>{saveDraft();peer=e.target.value;paintMode()};
-  load();
+ stopChat();let mode='global',peer='',request=0,signature='',loading=0,sending=false,recognition=null;
+ const controller=new AbortController();
+ $('#view').innerHTML=`<section class="card feature-card chatbox"><div class="chat-heading">${scenePet('rabbit')}<div><h2>The cozy corner</h2><p>Little hellos, big friendships. Make yourself at home.</p></div></div><div class="chat-modes"><button class="btn" id="globalMode">Everyone</button><button class="btn ghost" id="personalMode">Just us</button></div><label id="peerRow" hidden>Chat with <select id="chatPeer" aria-label="Choose a friend"></select></label><div class="chatlog" id="chatlog" role="log" aria-label="Messages"><div class="chat-empty">Making the room cozy…</div></div><div class="chat-stickers" aria-label="Quick stickers">${['🐰','🌷','🧋','✨','💗'].map(x=>`<button data-sticker="${x}" aria-label="Add ${x} sticker">${x}</button>`).join('')}</div><div class="composer"><input id="chatInput" aria-label="Message" maxlength="300" autocomplete="off" placeholder="Send a little hello…"><button class="btn ghost" id="micChat" aria-label="Dictate message">Mic</button><button class="btn" id="sendChat">Send</button></div><small id="chatStatus" role="status"></small></section>`;
+ const root=$('.chatbox'),input=$('#chatInput'),log=$('#chatlog'),status=$('#chatStatus'),send=$('#sendChat'),peerSelect=$('#chatPeer'),globalButton=$('#globalMode'),personalButton=$('#personalMode');
+ const alive=()=>root.isConnected&&!controller.signal.aborted;
+ const key=()=>`ah_chat_draft_${myId}_${mode}_${mode==='global'?'':peer}`;
+ const saveDraft=()=>{try{sessionStorage.setItem(key(),input.value)}catch(e){}};
+ const empty=text=>`<div class="chat-empty">${scenePet('rabbit')}<span>${text}</span></div>`;
+ function paintMode(){
+  ++request;signature='';status.textContent='';globalButton.classList.toggle('ghost',mode!=='global');personalButton.classList.toggle('ghost',mode!=='personal');$('#peerRow').hidden=mode!=='personal';
+  try{input.value=sessionStorage.getItem(key())||''}catch(e){input.value=''}
+  log.innerHTML=empty(mode==='personal'&&!peer?'Choose a friend for your own little corner.':'Fetching your conversation…');load();
+ }
+ async function load(){
+  if(!alive())return;const seq=++request,path=mode==='global'?'/api/chat':peer?`/api/direct/${encodeURIComponent(peer)}`:'';if(!path)return;
+  loading++;
   try{
-    const response=await fetch(API+'/api/players'),rows=await response.json();
-    people=rows.filter(p=>p.id!==myId).map(p=>({id:p.id,name:p.data?.name||p.data?.username||'Player'}));
-    $('#chatPeer').innerHTML='<option value="">Choose a player</option>'+people.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-  }catch(e){$('#chatStatus').textContent='Could not load players.'}
-  const poll=setInterval(()=>{if(!$('#chatlog'))clearInterval(poll);else load()},2200);
+   const data=await apiJson(path,{signal:controller.signal});if(!alive()||seq!==request)return;
+   const messages=data.messages||[],next=JSON.stringify(messages);if(next===signature)return;
+   const atBottom=!signature||log.scrollHeight-log.scrollTop-log.clientHeight<60;signature=next;
+   log.innerHTML=messages.length?messages.map(m=>{
+    const date=new Date(m.createdAt),time=Number.isNaN(+date)?'':date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return `<article class="bubble ${m.senderId===myId||m.id===myId?'me':''}"><b>${esc(m.name)}</b><div>${esc(m.text)}</div>${time?`<time>${esc(time)}</time>`:''}</article>`;
+   }).join(''):empty('A little hello could start something lovely.');
+   if(atBottom)log.scrollTop=log.scrollHeight;
+  }catch(e){if(alive()&&seq===request&&e.name!=='AbortError')status.textContent=e.message}finally{loading--}
+ }
+ input.oninput=saveDraft;input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send.click()}};
+ send.onclick=async()=>{
+  const text=input.value.trim();if(!text||sending)return;if(mode==='personal'&&!peer){status.textContent='Choose a friend first.';return}
+  const sentKey=key(),sentValue=input.value,path=mode==='global'?'/api/chat':`/api/direct/${encodeURIComponent(peer)}`;
+  sending=true;send.disabled=true;status.textContent='Sending…';
+  try{
+   await apiJson(path,{method:'POST',body:JSON.stringify({text})});
+   try{if(sessionStorage.getItem(sentKey)===sentValue)sessionStorage.removeItem(sentKey)}catch(e){}
+   if(!alive())return;
+   if(key()===sentKey&&input.value===sentValue){input.value='';saveDraft()}
+   status.textContent='Sent with a little love.';await load();
+  }catch(e){if(alive()&&e.name!=='AbortError')status.textContent=e.message}
+  finally{sending=false;if(alive())send.disabled=false}
+ };
+ globalButton.onclick=()=>{saveDraft();mode='global';paintMode()};personalButton.onclick=()=>{saveDraft();mode='personal';paintMode()};peerSelect.onchange=()=>{saveDraft();peer=peerSelect.value;paintMode()};
+ root.querySelectorAll('[data-sticker]').forEach(b=>b.onclick=()=>{input.value=(input.value+b.dataset.sticker).slice(0,300);saveDraft();input.focus({preventScroll:true})});
+ $('#micChat').onclick=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){status.textContent='Voice input is not supported by this browser.';return}
+  try{recognition?.abort();recognition=new SR();recognition.lang='en-IN';const speechKey=key();recognition.onresult=e=>{if(alive()&&speechKey===key()){input.value=(input.value+' '+e.results[0][0].transcript).trim().slice(0,300);saveDraft()}};recognition.onerror=()=>{if(alive())status.textContent='Voice input stopped. You can still type your message.'};recognition.start()}catch(e){status.textContent='Could not start voice input.'}
+ };
+ const poll=setInterval(()=>{if(alive()&&!document.hidden&&!loading&&!sending)load()},2200);
+ chatCleanup=()=>{saveDraft();clearInterval(poll);controller.abort();try{recognition?.abort()}catch(e){}};
+ paintMode();
+ try{const rows=await apiJson('/api/players',{signal:controller.signal});if(!alive())return;peerSelect.innerHTML='<option value="">Choose a friend</option>'+rows.filter(p=>p.id!==myId).map(p=>`<option value="${esc(p.id)}">${esc(p.data?.name||'Player')}</option>`).join('')}
+ catch(e){if(alive())status.textContent='Could not load friends. Please try opening chat again.'}
 }
-

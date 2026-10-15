@@ -23,6 +23,11 @@
  const cup=(boba=false)=>`<path d="M53 35h54l-6 61q-21 12-42 0Z" fill="#fffdf8"/><path d="M58 62h44l-4 31q-18 9-36 0Z" fill="${boba?pink:mint}"/><path d="m85 36 12-22" stroke="${lilac}" stroke-width="7"/>${rect(49,30,62,9,lilac,4)}${face(80,67)}${boba?[68,80,91].map((x,i)=>circle(x,91+i%2*3,3.8,ink)).join(''):''}`;
  function scene(id){
   switch(id){
+   case 'cloudhop':return `<path d="M26 85q-14-20 7-23 1-23 27-16 19-22 34 2 26-2 24 20 24 6 11 24H30z" fill="#fff"/>${face(77,74,.9)}${star(113,28,.6,yellow)}<path d="M53 47q-5-38 8-32l6 30M79 44q0-37 12-26l-2 32" fill="#fff" stroke="${ink}" stroke-width="2"/>`;
+   case 'jellystack':return `${rect(35,81,90,21,mint,8)}${rect(42,57,76,21,pink,8)}${rect(49,33,63,21,lilac,8)}${face(80,66,.7)}${face(81,42,.6)}${star(120,24,.5)}`;
+   case 'startrail':return `<path d="M40 82L64 31l47 12-20 49" fill="none" stroke="${lilac}" stroke-width="3"/>${star(40,82,.7,yellow)}${star(64,31,.7,yellow)}${star(111,43,.7,yellow)}${star(91,92,.7,yellow)}${face(64,30,.4)}`;
+   case 'garden':return `<path d="M80 85V44M79 70q-28-28-30-6 9 12 30 6M82 60q26-25 28-3-10 11-28 3" fill="${mint}" stroke="${ink}" stroke-width="2"/>${[0,1,2,3,4].map(i=>circle(80+Math.cos(i*1.256)*18,38+Math.sin(i*1.256)*18,12,pink)).join('')}${circle(80,38,12,yellow)}${face(80,37,.45)}<path d="M53 84h54l-8 25H61z" fill="${lilac}"/>`;
+
    case 'snake':return `<path d="M46 87q-8-24 15-24h25q18 0 17-22" fill="none" stroke="${ink}" stroke-width="24" stroke-linecap="round"/><path d="M46 87q-8-24 15-24h25q18 0 17-22" fill="none" stroke="${mint}" stroke-width="20" stroke-linecap="round"/>${circle(102,40,14,mint)}${face(103,39,.7)}${heart(55,32,.65)}`;
    case 'flappy':case 'bird':return `${rect(112,-9,22,40,mint,4)}${rect(108,26,30,10,mint,4)}${rect(112,88,22,42,mint,4)}${rect(108,82,30,10,mint,4)}<g class="cute-float">${circle(65,59,23,pink)}<ellipse cx="51" cy="66" rx="12" ry="8" fill="#ffe3ed"/><path d="m86 58 14 7-14 5" fill="${yellow}"/>${face(68,56,.9)}<path d="m60 35 2-8 7 8" fill="${pink}"/></g>`;
    case 'ttt':return `<path d="M65 24v74m30-74v74M39 48h82M39 75h82" stroke="${lilac}" stroke-width="5"/>${heart(51,37,.6)}${circle(80,62,10,'#fff')}${star(109,87,.7)}${face(80,61,.5)}`;
