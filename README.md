@@ -56,7 +56,7 @@ Game cards and wardrobe previews use original SVG illustrations from `public/cut
 
 ## Cozy game interiors and stability
 
-- Jenga has illustrated pastel blocks, a living room scene, and invite-code play for two. Players alternate pulls; a layer with a single edge support tips the tower, while a centre support stays balanced. The roof and foundation stay in place. Online Jenga uses a discriminator in the room state and an existing allowed storage slot, so existing room-table constraints do not need a SQL migration.
+- Jenga has illustrated pastel blocks, a living room scene, and invite-code play for two. Players alternate pulls; a layer with a single edge support tips the tower, while a centre support stays balanced. The roof and foundation stay in place. Online Jenga and Photo Booth use a discriminator in the room state and an existing allowed storage slot, so existing room-table constraints do not need a SQL migration. Previously created native Photo Booth rooms remain supported.
 - Burger Chef serves animal customers at a café counter and builds a visible layered dish on the tray. Boba Builder shows the tea, flavour, ice and toppings in both the requested drink and your cup.
 - The multiplayer lounge has illustrated game choices and player seats. Chat has timed bubbles, quick stickers, saved conversation drafts and updates that preserve your place in the conversation.
 - Four new games: **Cloud Hop** (endless distance runner), **Jelly Stack** (endless timing game), **Star Trail** (constellation levels), and **Mochi’s Garden** (plant, water and harvest levels). All save scores and earn the existing game rewards. Endless games use scores without level selectors.
