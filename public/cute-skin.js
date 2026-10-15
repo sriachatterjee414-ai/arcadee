@@ -75,6 +75,7 @@ body .msg{font-weight:700}
 @keyframes cbob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
 @keyframes cbl{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
 .cspb{position:fixed;width:12px;height:12px;pointer-events:none;z-index:200;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+body .shop-list{display:grid;gap:18px}body .shop-row{display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(120deg,#e4d4ff,#b8a2f3);color:#302044}body .shop-row>div{flex:1}body .shop-row p{margin:4px 0;font-size:13px}body .shop-icon{display:grid;place-items:center;min-width:56px;height:64px;border:3px solid #4a2c6b;border-radius:16px;font-size:28px}body .shop-row .btn{flex-shrink:0}body .gc .art svg{animation:cbob 5s ease-in-out infinite}@media(max-width:480px){#ctop{flex-wrap:wrap}#ctop .me{flex:1}#ctop .cib{width:30px;height:30px}#ctop .cpill{padding-right:6px;font-size:12px}body .shop-row{padding:10px;gap:8px}body .shop-row .btn{padding:5px 8px}}
 body .palette-pop{border:3px solid var(--ink);border-radius:20px}
 #gate{background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 55%,#fff),color-mix(in srgb,var(--acc2) 45%,#fff))!important;color:var(--ink)!important}
 #gate p{font-weight:700;font-size:21px;margin:0}#gate .auth-orb,#gate .auth-star{display:none}#gate .auth-art{width:140px;height:140px}
@@ -83,8 +84,8 @@ body .palette-pop{border:3px solid var(--ink);border-radius:20px}
 const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
 
 /* ---------- mascot, sparkles, background ---------- */
-const mascot=(hat='bow',size=100)=>{const H={none:'',bow:'<path d="M86 38l-14 6 3 12zM86 38l14 8-8 10z" fill="var(--acc)"/><circle cx="86" cy="40" r="4" fill="#fff"/>',crown:'<path d="M46 50L48 34l8 9 4-14 4 14 8-9 2 16z" fill="#ffd966"/>'};
-return `<svg class="cmas" width="${size}" height="${size}" viewBox="0 0 120 120"><g stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="40" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(-10 40 32)"/><ellipse cx="80" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(10 80 32)"/><ellipse cx="40" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(-10 40 34)"/><ellipse cx="80" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(10 80 34)"/><ellipse cx="60" cy="76" rx="42" ry="34" fill="#fff"/><g class="ey" stroke="none"><ellipse cx="44" cy="74" rx="5.5" ry="7" fill="${INK}"/><ellipse cx="76" cy="74" rx="5.5" ry="7" fill="${INK}"/><circle cx="46" cy="71" r="2" fill="#fff"/><circle cx="78" cy="71" r="2" fill="#fff"/></g><ellipse cx="33" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><ellipse cx="87" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><path d="M54 84q3 4.5 6 0q3 4.5 6 0" fill="none"/>${H[hat]||''}</g></svg>`};
+const mascot=(hat=accountProfile.equipment?.hat||'none',size=100)=>{const pet=accountProfile.equipment?.pet||'rabbit';const H={party:'<path d="M43 47L60 10l18 37z" fill="#9b7bff"/><circle cx="60" cy="10" r="6" fill="#ffd966"/><path d="M51 30l19 7M47 40l19-20" stroke="#fff"/>',flower:'<g fill="#ffd966"><circle cx="45" cy="44" r="8"/><circle cx="60" cy="40" r="8"/><circle cx="75" cy="44" r="8"/></g>',shades:'<path d="M30 67h60l-5 15H68l-8-9-8 9H35z" fill="#9b7bff"/>',none:'',bow:'<path d="M86 38l-14 6 3 12zM86 38l14 8-8 10z" fill="var(--acc)"/><circle cx="86" cy="40" r="4" fill="#fff"/>',crown:'<path d="M46 50L48 34l8 9 4-14 4 14 8-9 2 16z" fill="#ffd966"/>'};
+return `<svg class="cmas" width="${size}" height="${size}" viewBox="0 0 120 120"><g stroke="${INK}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${pet==='rabbit'?`<ellipse cx="40" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(-10 40 32)"/><ellipse cx="80" cy="32" rx="11" ry="24" fill="#fff" transform="rotate(10 80 32)"/><ellipse cx="40" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(-10 40 34)"/><ellipse cx="80" cy="34" rx="5" ry="15" fill="var(--acc)" stroke="none" transform="rotate(10 80 34)"/>`:pet==='cat'?'<path d="M24 64L20 23l32 25M68 48l32-25-4 41" fill="#fff"/><path d="M28 45l-2-12 14 13M80 46l14-13-2 12" stroke="#ff9ccb"/>':'<ellipse cx="26" cy="58" rx="15" ry="28" fill="#d9ac86"/><ellipse cx="94" cy="58" rx="15" ry="28" fill="#d9ac86"/>'}<ellipse cx="60" cy="76" rx="42" ry="34" fill="#fff"/><g class="ey" stroke="none"><ellipse cx="44" cy="74" rx="5.5" ry="7" fill="${INK}"/><ellipse cx="76" cy="74" rx="5.5" ry="7" fill="${INK}"/><circle cx="46" cy="71" r="2" fill="#fff"/><circle cx="78" cy="71" r="2" fill="#fff"/></g><ellipse cx="33" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><ellipse cx="87" cy="84" rx="7" ry="4.5" fill="var(--acc)" stroke="none" opacity=".7"/><path d="M54 84q3 4.5 6 0q3 4.5 6 0" fill="none"/>${H[hat]||''}</g></svg>`};
 function burst(x,y,n=14){const cols=['#ff7eb6','#ffd966','#7be0c3','#7cc8ff','#c9a8ff'];for(let i=0;i<n;i++){const s=document.createElement('span');s.className='cspb';s.style.left=x+'px';s.style.top=y+'px';s.style.background=cols[i%5];document.body.append(s);const a=Math.random()*6.28,r=40+Math.random()*80;s.animate([{transform:'translate(0,0) scale(1) rotate(0)',opacity:1},{transform:`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(.2) rotate(240deg)`,opacity:0}],{duration:700+Math.random()*300,easing:'ease-out'}).onfinish=()=>s.remove()}}
 document.addEventListener('pointerdown',e=>{if(e.target.closest('.btn,.chip,.gc,#ctabs button,.cib'))burst(e.clientX,e.clientY,6)});
 const D=document.createElement('div');D.id='cdood';const S=document.createElement('div');S.id='cspark';document.body.prepend(S);document.body.prepend(D);
@@ -97,13 +98,14 @@ for(let i=0;i<18;i++){const s=document.createElement('i');s.className='csp';s.st
 const IC={shop:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 016 0"/>',lb:'<path d="M8 4h8v6a4 4 0 01-8 0z"/><path d="M8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 14v4M8 20h8"/>',play:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',chat:'<path d="M21 12a8 8 0 01-8 8H4l2.3-3A8 8 0 1121 12z"/>',profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',daily:'<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 13h18M12 8c-3-5-7-3-5 0M12 8c3-5 7-3 5 0"/>',online:'<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 10v5M4.5 12.5h5M16 11h.01M18.5 14h.01"/>',fol:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.7c2.7.2 4.8 1.9 5.6 4.8"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'};
 const svg=k=>`<svg viewBox="0 0 24 24">${IC[k]}</svg>`;
 const top=document.createElement('header');top.id='ctop';
-top.innerHTML=`<div class="me"><span id="cav"></span><div><b id="cnm"></b><div class="cxp"><i id="cxp"></i></div></div></div><div class="cpill"><i>★</i><span id="ccoin">0</span></div>`+['daily','online','fol','settings'].map(k=>`<button class="cib" data-go="${k}" aria-label="${k}">${svg(k)}</button>`).join('');
+top.innerHTML=`<div class="me"><span id="cav"></span><div><b id="cnm"></b><div class="cxp"><i id="cxp"></i></div></div></div><div class="cpill"><i>★</i><span id="ccoin">0</span></div><div class="cpill" aria-label="Diamonds">💎 <span id="cgem">0</span></div>`+['daily','online','fol','settings'].map(k=>`<button class="cib" data-go="${k}" aria-label="${k}">${svg(k)}</button>`).join('');
 const tabs=document.createElement('nav');tabs.id='ctabs';
 tabs.innerHTML=[['shop','Shop'],['lb','Ranks'],['play','Play'],['chat','Chat'],['profile','Me']].map(([k,n])=>`<button data-go="${k}">${svg(k)}${n}</button>`).join('');
 document.body.append(top,tabs);
 [top,tabs].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){tab=b.dataset.go;playing=null;sel=null;render()}}));
-document.getElementById('cav').innerHTML=mascot('bow',38);
-function topUpdate(){try{const t=totals(me.stats),lv=1+Math.floor(t.pts/400);$('#cnm').textContent=(myName||'Player')+' · Lv '+lv;$('#cxp').style.width=((t.pts%400)/4)+'%';$('#ccoin').textContent=(accountProfile&&accountProfile.coins)||0}catch(e){}}
+document.getElementById('cav').innerHTML=mascot(undefined,38);
+let lastLook='';
+function topUpdate(){try{const look=JSON.stringify(accountProfile.equipment||{});if(look!==lastLook){lastLook=look;$('#cav').innerHTML=mascot(undefined,38);const hero=$('.chero .cmas');if(hero)hero.outerHTML=mascot(undefined,92)}$('#cgem').textContent=accountProfile.diamonds||0;const t=totals(me.stats),lv=1+Math.floor(t.pts/400);$('#cnm').textContent='Lv '+lv;$('#cnm').title=myName||'Player';$('#cxp').style.width=((t.pts%400)/4)+'%';$('#ccoin').textContent=(accountProfile&&accountProfile.coins)||0}catch(e){}}
 setInterval(topUpdate,1500);
 const TITLES={online:'Play Together',daily:'Daily Gifts',shop:'Shop',lb:'Ranks',fol:'Friends',chat:'Chat',profile:'My Profile',settings:'Settings'};
 function decorate(){
@@ -113,12 +115,13 @@ function decorate(){
  let t=TITLES[tab]||'Games';if(tab==='play'&&(playing||sel)){const G=GAMES.find(g=>g.id===(playing||sel));if(G)t=G.n}
  const r=document.createElement('div');r.className='rwrap cr';r.innerHTML='<span class="ribbon">'+esc(t)+'</span>';m.insertBefore(r,m.firstChild);
  const act=tab;[top,tabs].forEach(el=>el.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('on',b.dataset.go===act)));
+ if(tab==='profile'){const av=$('#view .avatar');if(av)av.innerHTML=mascot(undefined,58)}
  topUpdate();
 }
 function addHero(){
  const v=$('#view');if(!v||v.querySelector('.chero'))return;
  const hi=["Ready to play?","Let's win some coins!","Pick a game, cutie!","You're on a roll!"],d=document.createElement('div');d.className='card chero';
- d.innerHTML=mascot('bow',92)+`<div class="chero-r"><div class="cbub">Hi ${esc(myName||'friend')}! ${hi[Math.floor(Math.random()*hi.length)]}</div><div class="chero-b"><button class="btn sm" data-go="daily">Daily gift</button><button class="btn sm ghost" data-go="online">Play with friends</button></div></div>`;
+ d.innerHTML=mascot(undefined,92)+`<div class="chero-r"><div class="cbub">Hi ${esc(myName||'friend')}! ${hi[Math.floor(Math.random()*hi.length)]}</div><div class="chero-b"><button class="btn sm" data-go="daily">Daily gift</button><button class="btn sm ghost" data-go="online">Play with friends</button></div></div>`;
  v.insertBefore(d,v.firstChild);
  d.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{tab=b.dataset.go;playing=null;sel=null;render()});
 }
@@ -128,7 +131,7 @@ const _end=end;end=function(g,won,text,score,nr){_end(g,won,text,score,nr);if(wo
 
 /* ---------- gate mascot ---------- */
 const gate=document.getElementById('gate');
-if(gate){const mo=new MutationObserver(()=>{if(!document.body.contains(gate)){mo.disconnect();return}const a=gate.querySelector('.auth-art');if(a&&!a.querySelector('.cmas'))a.innerHTML=mascot('bow',140)});mo.observe(gate,{childList:true,subtree:true})}
+if(gate){const art=gate.querySelector('.auth-art');if(art)art.innerHTML=mascot(undefined,140);const mo=new MutationObserver(()=>{if(!document.body.contains(gate)){mo.disconnect();return}const a=gate.querySelector('.auth-art');if(a&&!a.querySelector('.cmas'))a.innerHTML=mascot(undefined,140)});mo.observe(gate,{childList:true,subtree:true})}
 
 /* ---------- 4 new games ---------- */
 GAMES.push(
@@ -146,12 +149,13 @@ lights:'<g fill="#ffd400"><circle cx="24" cy="24" r="10"/><circle cx="50" cy="50
 function flappy(){
  const gap=Math.max(92,146-LV*2),goal=6+LV,spd=2+LV*.05;
  frame('flappy','<div class="msg" id="m"></div><canvas id="fc" width="320" height="440" style="width:100%;max-width:320px;display:block;margin:0 auto;touch-action:none"></canvas><p class="game-instruction">Tap to flap!</p>');
- const cv=$('#fc'),c=cv.getContext('2d');let by=200,vy=0,P=[],sc=0,t=60,go=false,done=false;
- const flap=()=>{if(done)return;go=true;vy=-6.1;snd('pop')};
+ const cv=$('#fc'),c=cv.getContext('2d');let by=200,vy=0,P=[],sc=0,t=60,go=false,done=false,paused=false,revived=false;
+ const flap=()=>{if(done||paused)return;go=true;vy=-6.1;snd('pop')};
  cv.onpointerdown=e=>{e.preventDefault();flap()};
  const key=e=>{if(e.code==='Space'){e.preventDefault();flap()}};addEventListener('keydown',key);
- const fin=(w,txt)=>{if(done)return;done=true;clearInterval(tm);removeEventListener('keydown',key);end('flappy',w,txt,sc*40+(w?LV*50:0))};
+ const fin=(w,txt)=>{if(done||paused)return;if(!w&&!revived){paused=true;offerRevive('flappy',sc*40,()=>{revived=true;paused=false;by=200;vy=0;P=[];t=0;go=false},()=>{paused=false;revived=true;fin(w,txt)});return}done=true;clearInterval(tm);removeEventListener('keydown',key);end('flappy',w,txt,sc*40+(w?LV*50:0))};
  const tm=setInterval(()=>{
+  if(paused){if(!$('#revive')){clearInterval(tm);removeEventListener('keydown',key)}return}
   if(!document.body.contains(cv)){clearInterval(tm);removeEventListener('keydown',key);return}
   if(go){vy+=.38;by+=vy;t++;if(t>85){t=0;P.push({x:330,g:gap/2+35+Math.random()*(440-gap-70),s:0})}
    P.forEach(p=>{p.x-=spd;if(!p.s&&p.x+52<68){p.s=1;sc++;snd('ding');if(sc>=goal)fin(true,'Sky master! 🐤')}

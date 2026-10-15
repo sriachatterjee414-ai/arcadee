@@ -1,3 +1,5 @@
+const SCORE_GAMES=new Set(['ttt','rps','ludo','chess','snl','pong','breakout','g2048']);
+const hasLevels=g=>!SCORE_GAMES.has(g)&&!['photo','sketch'].includes(g);
 const GAMES=[
 {id:'snake',n:'Snake',e:'🐍',a:'🐍🍎',t:'Skill',d:'Eat apples, avoid walls and yourself',h:'Swipe or use the arrows. Each apple is 10 points. Levels get faster and need a higher score.'},
 {id:'tiles',n:'Mahjong',e:'🀄',a:'🀄🀅🀇',t:'Puzzle',d:'Clear the layered tiles',h:'Tap uncovered tiles to send them to the tray. Three alike vanish. A full tray loses.'},

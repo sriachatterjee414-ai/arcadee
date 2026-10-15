@@ -11,11 +11,20 @@ const SHOP_ITEMS=[
   {id:'ocean',name:'Ocean Arcade Theme',description:'A cool blue-green look for your games.',price:70,type:'theme'},
   {id:'sunset',name:'Sunset Arcade Theme',description:'Warm peach and coral colors for your arcade.',price:70,type:'theme'}
 ];
+SHOP_ITEMS.push(
+ ...[['lavender','Lavender Dream'],['lemon','Lemon Drop'],['night','Starry Night'],['forest','Forest Picnic'],['coral','Coral Kiss'],['citrus','Citrus Pop'],['ink','Ink Cloud'],['midnight','Midnight Sky']].map(([id,name])=>({id,name,price:0,type:'theme',description:'A complimentary classic colour theme.'})),
+ {id:'rose',name:'Bubblegum',description:'Your original pink arcade.',price:0,type:'theme'},
+ ...[['mint','Mint Soda',120],['sky','Cloud Nine',120],['peach','Peach Fizz',150],['grape','Grape Jelly',180]].map(([id,name,price])=>({id,name,price,type:'theme',description:'A sweet colour theme.'})),
+ ...[['rabbit','Mochi the Rabbit',0],['cat','Mochi the Cat',80],['dog','Mochi the Puppy',100]].map(([id,name,price])=>({id,name,price,type:'pet',currency:'diamonds',description:'Your animated arcade companion.'})),
+ ...[['none','No accessory',0],['bow','Pink Bow',40],['party','Party Hat',90],['crown','Royal Crown',200],['flower','Daisy Crown',120],['shades','Star Shades',160]].map(([id,name,price])=>({id,name,price,type:'hat',description:'Dress up Mochi.'})),
+ {id:'lucky',name:'Lucky Box',price:30,type:'box',description:'80%: 10–50 coins · 20%: 1–3 diamonds. Open again anytime.'}
+);
 // CHANGED: added flappy, breakout, pong, lights (the 4 new games)
 const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop','flappy','breakout','pong','lights']);
 let local = {};
 try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};
+for(const [uid,account] of Object.entries(local)){if(uid.startsWith('u_')&&account&&!account.reward_state?._version)account.reward_state={...account.stats,...account.reward_state,_version:1}}
 if(!local.chat) local.chat=[];
 if(!local.direct) local.direct=[];
 if(!local.rooms||typeof local.rooms!=='object')local.rooms={};
@@ -39,12 +48,17 @@ async function getPlayers(){if(!durable){return Object.entries(local).filter(([k
  let users;try{users=await sb('arcade_users?select=id,username,stats,following,login_streak&order=username.asc')}catch(e){console.error('getPlayers fallback (run the SQL migration):',e.message);users=await sb('arcade_users?select=id,username,stats,following&order=username.asc')}return users.map(u=>({id:u.id,data:{stats:u.stats||{},following:Array.isArray(u.following)?u.following:[],name:u.username||'',badges:earnedBadges(u.stats||{},u.login_streak||0)}}))}
 function sessionId(req){const h=req.headers.authorization||'';const t=h.startsWith('Bearer ')?h.slice(7):'',parts=t.split('.');if(parts.length!==2)return null;const expected=crypto.createHmac('sha256',SESSION_SECRET).update(parts[0]).digest(),actual=Buffer.from(parts[1],'base64url');if(actual.length!==expected.length||!crypto.timingSafeEqual(actual,expected))return null;try{const payload=JSON.parse(Buffer.from(parts[0],'base64url').toString());return payload.id&&payload.exp>Date.now()?payload.id:null}catch(e){return null}}
 async function requireUser(req){return sessionId(req)}
-async function register(name,pin){if(durable){if(await sbUserByName(name))throw Object.assign(new Error('That username is already taken.'),{code:409});const salt=crypto.randomBytes(16).toString('hex');const uid=id();await sb('arcade_users',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid,username:name,username_normalized:normalizeName(name),pin_salt:salt,pin_hash:hashPin(pin,salt),stats:{},following:[],coins:0,login_streak:0,daily:{},owned_items:[]})});return {id:uid,name}}
- if(Object.values(local).some(v=>v&&v.name&&normalizeName(v.name)===normalizeName(name)))throw Object.assign(new Error('That username is already taken.'),{code:409});const uid=id(),salt=crypto.randomBytes(16).toString('hex');local[uid]={name,stats:{},following:[],coins:0,loginStreak:0,lastLoginDate:null,daily:{},ownedItems:[],auth:{salt,pin:hashPin(pin,salt)}};await saveLocal();return{id:uid,name}}
+async function register(name,pin){if(durable){if(await sbUserByName(name))throw Object.assign(new Error('That username is already taken.'),{code:409});const salt=crypto.randomBytes(16).toString('hex');const uid=id();await sb('arcade_users',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid,username:name,username_normalized:normalizeName(name),pin_salt:salt,pin_hash:hashPin(pin,salt),stats:{},reward_state:{_version:1},following:[],coins:0,login_streak:0,daily:{},owned_items:[]})});return {id:uid,name}}
+ if(Object.values(local).some(v=>v&&v.name&&normalizeName(v.name)===normalizeName(name)))throw Object.assign(new Error('That username is already taken.'),{code:409});const uid=id(),salt=crypto.randomBytes(16).toString('hex');local[uid]={name,stats:{},reward_state:{_version:1},following:[],coins:0,loginStreak:0,lastLoginDate:null,daily:{},ownedItems:[],auth:{salt,pin:hashPin(pin,salt)}};await saveLocal();return{id:uid,name}}
 async function login(name,pin){if(durable){const p=await sbUserByName(name);if(!p)throw new Error('Username or PIN is incorrect.');const expected=hashPin(pin,p.pin_salt);if(expected!==p.pin_hash)throw new Error('Username or PIN is incorrect.');return{id:p.id,name:p.username}}
  for(const [uid,p] of Object.entries(local)){if(p&&p.name&&normalizeName(p.name)===normalizeName(name)){if(p.auth&&hashPin(pin,p.auth.salt)===p.auth.pin)return{id:uid,name:p.name}}}throw new Error('Username or PIN is incorrect.')}
-async function savePlayer(uid,d){if(durable){const old=(await sb('arcade_users?select=following,username,stats&id=eq.'+encodeURIComponent(uid)+'&limit=1'))[0];if(!old)throw Object.assign(new Error('Account not found.'),{code:404});await sb('arcade_users?id=eq.'+encodeURIComponent(uid),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({stats:mergeStats(old.stats,d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String),updated_at:new Date().toISOString()})});return}
- if(!local[uid])throw Object.assign(new Error('Account not found.'),{code:404});local[uid]={...local[uid],stats:mergeStats(local[uid].stats,d.stats),following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String)};await saveLocal()}
+function savePlayer(uid,d){
+ return mutateAccount(uid,current=>({
+  stats:mergeStats(current.stats,d.stats),
+  following:(Array.isArray(d.following)?d.following:[]).slice(0,500).map(String),
+  ...(!current.reward_state?._version?{reward_state:{...current.stats,...current.reward_state,_version:1}}:{})
+ }));
+}
 const today=()=>new Date().toISOString().slice(0,10);
 const freshDaily=state=>state&&state.date===today()?{date:state.date,plays:Array.isArray(state.plays)?state.plays:[],wins:Array.isArray(state.wins)?state.wins:[],claimed:Array.isArray(state.claimed)?state.claimed:[]}:{date:today(),plays:[],wins:[],claimed:[]};
 const challengeList=d=>[
@@ -63,12 +77,12 @@ function earnedBadges(stats={},streak=0){
  ];
 }
 async function getAccount(uid){
- if(durable){const rows=await sb('arcade_users?select=id,username,stats,following,coins,login_streak,last_login_date,daily,owned_items,updated_at&id=eq.'+encodeURIComponent(uid)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Account not found.'),{code:404});return rows[0]}
+ if(durable){const rows=await sb('arcade_users?select=id,username,stats,following,coins,diamonds,equipment,reward_state,login_streak,last_login_date,daily,owned_items,updated_at&id=eq.'+encodeURIComponent(uid)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Account not found.'),{code:404});return rows[0]}
  const u=local[uid];if(!u)throw Object.assign(new Error('Account not found.'),{code:404});
  return {...u,login_streak:u.loginStreak||0,last_login_date:u.lastLoginDate||null,owned_items:u.ownedItems||[],daily:u.daily||{},updated_at:u.updatedAt||''};
 }
 async function patchAccount(uid,current,patch){
- const stamp=new Date().toISOString();
+ const stamp=new Date(Math.max(Date.now(),(Date.parse(current.updated_at)||0)+1)).toISOString();
  if(durable){
   const query='arcade_users?id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(current.updated_at);
   const rows=await sb(query,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({...patch,updated_at:stamp})});
@@ -78,20 +92,28 @@ async function patchAccount(uid,current,patch){
  const u=local[uid];if(!u)throw Object.assign(new Error('Account not found.'),{code:404});
  const next={...u,...patch,updatedAt:stamp};if('login_streak'in patch)next.loginStreak=patch.login_streak;if('last_login_date'in patch)next.lastLoginDate=patch.last_login_date;if('owned_items'in patch)next.ownedItems=patch.owned_items;local[uid]=next;await saveLocal();return {...next,login_streak:next.loginStreak||0,last_login_date:next.lastLoginDate||null,owned_items:next.ownedItems||[],updated_at:next.updatedAt};
 }
-async function mutateAccount(uid,change){
+async function mutateAccountUnlocked(uid,change){
  for(let i=0;i<3;i++){const current=await getAccount(uid),patch=change(current);if(!patch)return current;try{return await patchAccount(uid,current,patch)}catch(e){if(e.code!==409||i===2)throw e}}
 }
+const accountQueues=new Map();
+function accountTransaction(uid,work){
+ const pending=(accountQueues.get(uid)||Promise.resolve()).then(work,work);
+ accountQueues.set(uid,pending);
+ pending.finally(()=>{if(accountQueues.get(uid)===pending)accountQueues.delete(uid)}).catch(()=>{});
+ return pending;
+}
+function mutateAccount(uid,change){return accountTransaction(uid,()=>mutateAccountUnlocked(uid,change))}
 function profileView(u,extra={}){
  const daily=freshDaily(u.daily),challenges=challengeList(daily);
- return {coins:Math.max(0,+u.coins||0),loginStreak:Math.max(0,+u.login_streak||0),lastLoginDate:u.last_login_date||null,checkedInToday:u.last_login_date===today(),ownedItems:Array.isArray(u.owned_items)?u.owned_items:[],daily:{date:daily.date,plays:daily.plays,wins:daily.wins,claimed:daily.claimed,challenges:challenges.map(c=>({...c,claimed:daily.claimed.includes(c.id)}))},badges:earnedBadges(u.stats||{},u.login_streak||0),...extra};
+ return {diamonds:n(u.diamonds),equipment:u.equipment||{pet:'rabbit',hat:'none',theme:'rose'},coins:Math.max(0,+u.coins||0),loginStreak:Math.max(0,+u.login_streak||0),lastLoginDate:u.last_login_date||null,checkedInToday:u.last_login_date===today(),ownedItems:Array.isArray(u.owned_items)?u.owned_items:[],daily:{date:daily.date,plays:daily.plays,wins:daily.wins,claimed:daily.claimed,challenges:challenges.map(c=>({...c,claimed:daily.claimed.includes(c.id)}))},lastBox:u.reward_state?.box,badges:earnedBadges(u.stats||{},u.login_streak||0),...extra};
 }
 async function checkIn(uid){
  let reward=0;
  const u=await mutateAccount(uid,current=>{
-  const date=today();if(current.last_login_date===date)return null;
+  reward=0;const date=today();if(current.last_login_date===date)return null;
   const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10),streak=current.last_login_date===yesterday?(+current.login_streak||0)+1:1;
   reward=10+Math.min(7,streak-1)*5;
-  return {coins:Math.max(0,+current.coins||0)+reward,login_streak:streak,last_login_date:date};
+  return {diamonds:n(current.diamonds)+3,coins:Math.max(0,+current.coins||0)+reward,login_streak:streak,last_login_date:date};
  });
  return profileView(u,{checkInReward:reward});
 }
@@ -106,13 +128,45 @@ async function claimChallenge(uid,challengeId){
   const daily=freshDaily(current.daily),challenge=challengeList(daily).find(c=>c.id===challengeId);
   if(daily.claimed.includes(challengeId))throw Object.assign(new Error('You already claimed this challenge.'),{code:409});
   if(challenge.progress<challenge.goal)throw Object.assign(new Error('Finish the challenge before claiming its coins.'),{code:400});
-  daily.claimed.push(challengeId);return {daily,coins:Math.max(0,+current.coins||0)+rewards[challengeId]};
+  daily.claimed.push(challengeId);return {daily,diamonds:n(current.diamonds)+2,coins:Math.max(0,+current.coins||0)+rewards[challengeId]};
  });
 }
 async function purchaseItem(uid,itemId){
  const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)throw Object.assign(new Error('Shop item not found.'),{code:404});
- return mutateAccount(uid,current=>{const owned=Array.isArray(current.owned_items)?current.owned_items:[];if(owned.includes(item.id))throw Object.assign(new Error('You already own this theme.'),{code:409});const coins=Math.max(0,+current.coins||0);if(coins<item.price)throw Object.assign(new Error('Not enough coins yet. Complete daily challenges to earn more.'),{code:400});return {coins:coins-item.price,owned_items:[...owned,item.id]}});
+ return mutateAccount(uid,current=>{
+  const owned=current.owned_items||[],currency=item.currency||'coins',balance=n(current[currency]);
+  if(item.type!=='box'&&(owned.includes(item.id)||item.price===0))throw Object.assign(new Error('You already own this item. Equip it instead.'),{code:409});
+  if(balance<item.price)throw Object.assign(new Error('Not enough '+currency+'. Play games or claim daily gifts.'),{code:400});
+  if(item.type==='box'){
+   const gem=crypto.randomInt(5)===0,amount=gem?crypto.randomInt(1,4):crypto.randomInt(10,51);
+   return {coins:balance-item.price+(gem?0:amount),diamonds:n(current.diamonds)+(gem?amount:0),reward_state:{...current.reward_state,box:{currency:gem?'diamonds':'coins',amount}}};
+  }
+  return {[currency]:balance-item.price,owned_items:[...owned,item.id]};
+ });
 }
+async function equipItem(uid,itemId){
+ const item=SHOP_ITEMS.find(x=>x.id===itemId&&x.type!=='box');
+ if(!item)throw Object.assign(new Error('Item not found.'),{code:404});
+ return mutateAccount(uid,current=>{
+  if(item.price&&!(current.owned_items||[]).includes(item.id))throw Object.assign(new Error('Buy this item first.'),{code:403});
+  return {equipment:{pet:'rabbit',hat:'none',theme:'rose',...current.equipment,[item.type]:item.id}};
+ });
+}
+async function rewardGame(uid,game){
+ if(!VALID_GAMES.has(game)||['photo','sketch'].includes(game))throw Object.assign(new Error('Invalid game.'),{code:400});
+ let reward=0;
+ const u=await mutateAccount(uid,current=>{
+  reward=0;const state=current.reward_state||{};
+  if(!state._version)return {reward_state:{...current.stats,...state,_version:1}};
+  const old=state[game]||{},stats=current.stats?.[game]||{};
+  const plays=Math.max(0,n(stats.p)-n(old.p));
+  if(!plays)return null;
+  reward=Math.min(500,plays*2+Math.floor(Math.max(0,n(stats.pts)-n(old.pts))/20)+Math.max(0,n(stats.w)-n(old.w))*10+Math.max(0,(stats.lv||1)-(old.lv||1))*20);
+  return {coins:n(current.coins)+reward,reward_state:{...state,[game]:stats}};
+ });
+ return profileView(u,{gameReward:reward});
+}
+
 const ROOM_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const roomCode=()=>Array.from({length:6},()=>ROOM_ALPHABET[crypto.randomInt(ROOM_ALPHABET.length)]).join('');
 function newRoomState(game){if(game==='booth')return{shots:{host:[],guest:[]}};return game==='ttt'?{board:Array(9).fill(null),turn:'host',winner:null,draw:false}:{round:1,scores:{host:0,guest:0},picks:{},lastResult:null}}
@@ -213,7 +267,7 @@ async function directPost(uid,other,text){
 const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp'};
  http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
  try{
-  if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.coins':'arcade_users?select=coins&limit=1','users.login_streak':'arcade_users?select=login_streak&limit=1','users.daily':'arcade_users?select=daily&limit=1','users.owned_items':'arcade_users?select=owned_items&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
+  if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.diamonds':'arcade_users?select=diamonds,equipment,reward_state&limit=1','users.coins':'arcade_users?select=coins&limit=1','users.login_streak':'arcade_users?select=login_streak&limit=1','users.daily':'arcade_users?select=daily&limit=1','users.owned_items':'arcade_users?select=owned_items&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
   if(u.pathname==='/api/players'&&req.method==='GET')return json(res,200,await getPlayers());
   if(u.pathname==='/api/register'&&req.method==='POST')return body(req,async d=>{try{const name=String(d.name||'').trim().replace(/\s+/g,' '),pin=String(d.pin||'');if(!validName(name))return json(res,400,{error:'Username must be 2-16 characters and use letters, numbers, spaces, _ or -.'});if(!validPin(pin))return json(res,400,{error:'PIN must be 4-8 digits.'});const v=await register(name,pin);json(res,201,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||500,{error:e.message||'Could not create account.'})}});
   if(u.pathname==='/api/login'&&req.method==='POST')return body(req,async d=>{try{const v=await login(String(d.name||'').trim(),String(d.pin||''));json(res,200,{ok:true,...v,token:token(v.id)})}catch(e){json(res,e.code||401,{error:e.message})}});
@@ -225,6 +279,11 @@ const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png'
    if(u.pathname==='/api/daily/activity'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{await addDailyActivity(uid,String(d.game||''),d.won===true);json(res,200,profileView(await getAccount(uid)))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/daily/claim'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await claimChallenge(uid,String(d.challengeId||''));json(res,200,profileView(u))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/shop'&&req.method==='GET'){const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await getAccount(uid);return json(res,200,{items:SHOP_ITEMS,profile:profileView(u)})}catch(e){return json(res,e.code||500,{error:e.message})}}
+   if(['/api/shop/equip','/api/game/reward','/api/game/revive'].includes(u.pathname)&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{
+    if(u.pathname==='/api/game/reward')return json(res,200,await rewardGame(uid,String(d.game||'')));
+    const account=u.pathname==='/api/shop/equip'?await equipItem(uid,String(d.itemId||'')):await mutateAccount(uid,current=>{if(n(current.coins)<25)throw Object.assign(new Error('You need 25 coins to revive.'),{code:400});return {coins:n(current.coins)-25}});
+    json(res,200,profileView(account));
+   }catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/shop/purchase'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in again.'});try{const u=await purchaseItem(uid,String(d.itemId||''));json(res,200,profileView(u))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/rooms'&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req);if(!uid)return json(res,401,{error:'Please log in to create an invite room.'});try{json(res,201,await createRoom(uid,String(d.game||'')))}catch(e){json(res,e.code||500,{error:e.message})}});
    if(u.pathname==='/api/rtc-config'&&req.method==='GET'){if(!sessionId(req))return json(res,401,{error:'Please log in.'});const ice=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];if(process.env.TURN_URL)ice.push({urls:process.env.TURN_URL.split(',').map(x=>x.trim()),username:process.env.TURN_USERNAME||'',credential:process.env.TURN_CREDENTIAL||''});return json(res,200,{iceServers:ice})}
@@ -245,4 +304,4 @@ const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png'
     if(dm&&req.method==='POST')return body(req,async d=>{const uid=sessionId(req),text=String(d.text||'').trim();if(!uid)return json(res,401,{error:'Log in to chat.'});if(!text)return json(res,400,{error:'Message is empty.'});try{await directPost(uid,dm[1],text);json(res,201,{ok:true})}catch(e){json(res,e.code||500,{error:e.message})}});
   const requested=u.pathname==='/'?'/index.html':decodeURIComponent(u.pathname),f=path.join(PUB,requested);if(!f.startsWith(PUB)){res.writeHead(403);return res.end('Forbidden')}fs.readFile(f,(e,data)=>{if(e){res.writeHead(404);return res.end('Not found')}res.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'});res.end(data)})
  }catch(e){json(res,500,{error:'Server error'})}
-}).listen(PORT,()=>console.log(`Arcade Hub running on ${PORT} (${durable?'Supabase durable mode':'local prototype mode'})`));
+}).listen(PORT,function(){console.log(`Arcade Hub running on ${this.address().port} (${durable?'Supabase durable mode':'local prototype mode'})`)});

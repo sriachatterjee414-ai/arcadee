@@ -62,3 +62,14 @@ alter table public.arcade_users enable row level security;
 alter table public.arcade_chat enable row level security;
 alter table public.arcade_direct_messages enable row level security;
 alter table public.arcade_rooms enable row level security;
+
+-- Cute arcade wallets and cross-device equipment.
+alter table public.arcade_users add column if not exists diamonds integer not null default 0 check (diamonds >= 0);
+alter table public.arcade_users add column if not exists equipment jsonb not null default '{}'::jsonb;
+alter table public.arcade_users add column if not exists reward_state jsonb not null default '{}'::jsonb;
+
+-- Preserve existing scores without paying historical rewards again.
+update public.arcade_users
+set reward_state = stats || reward_state || '{"_version":1}'::jsonb
+where not (reward_state ? '_version');
+alter table public.arcade_users alter column reward_state set default '{"_version":1}'::jsonb;
