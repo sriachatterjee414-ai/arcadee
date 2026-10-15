@@ -69,3 +69,11 @@ Checks: `node --test tests/*.cjs` covers economy/storage, old multiplayer modes,
 All 48 games and creative tools share illustrated title badges, soft board materials and rounded controls. Board pieces, matching candies, potion layers, memory cards and rhythm pads have their own toy details. Snake, Bubble Pop, Bird Launch and Turbo Racer include illustrated playfields; Hangman uses a bunny with seven guess balloons. Colour clues remain distinct, and reduced-motion preferences are respected.
 
 **Mochi Café** is a separate cooking game: read an animal customer’s recipe, mix ingredients, brew the drink, choose the pastry, and serve. Incorrect orders cost hearts; complete the shift before closing to unlock the next level. Later shifts introduce more recipes and customers. Scores, coins, daily activities and replay use the existing arcade systems. Brewing and countdown callbacks are cancelled when leaving the café.
+
+## Install Mochi Arcade on a phone
+
+Open the deployed HTTPS website and choose **Install on your phone** on the games screen or in Settings. Android browsers that support installation show the native install prompt when available; the fallback guide explains the browser menu. On iPhone/iPad, open the website in Safari, tap Share → Add to Home Screen → Add (keep Open as Web App enabled if offered). The Mochi icon opens the arcade in its own window. Sign in with your existing account if asked.
+
+This is an installable web app (PWA); it does not publish a Google Play or App Store package. The website and server remain the same, including games, coins, chat and invite rooms. HTTPS is required outside localhost. The manifest supplies 192/512 PNG icons and an Apple 180 icon, rendered from `public/icons/mochi.svg`; the operating system handles the launch screen using the icon and manifest background.
+
+The arcade remains online: connection loss shows a non-destructive notice, while a launch without internet shows a cached reconnect page. The service worker caches only that public page and its icons. It never caches game pages, API responses, account data or writes. Available worker updates show **Update & reload**, and wait for the player to choose it. When changing the cached offline assets, increment the cache version in `public/sw.js`. The service worker is served with the server’s existing `no-cache` policy.

@@ -123,8 +123,8 @@ function decorate(){
 function addHero(){
  const v=$('#view');if(!v||v.querySelector('.chero'))return;
  const hi=["Ready to play?","Let's win some coins!","Pick a game, cutie!","You're on a roll!"],d=document.createElement('div');d.className='card chero';
- d.innerHTML=mascot(undefined,92)+`<div class="chero-r"><div class="cbub">Hi ${esc(myName||'friend')}! ${hi[Math.floor(Math.random()*hi.length)]}</div><div class="chero-b"><button class="btn sm" data-go="daily">Daily gift</button><button class="btn sm ghost" data-go="online">Play with friends</button></div></div>`;
- v.insertBefore(d,v.firstChild);
+ d.innerHTML=mascot(undefined,92)+`<div class="chero-r"><div class="cbub">Hi ${esc(myName||'friend')}! ${hi[Math.floor(Math.random()*hi.length)]}</div><div class="chero-b"><button class="btn sm" data-go="daily">Daily gift</button><button class="btn sm ghost" data-go="online">Play with friends</button><button class="btn sm ghost" data-app-install>Install on your phone</button></div></div>`;
+ v.insertBefore(d,v.firstChild);if(window.MochiApp)MochiApp.refresh();
  d.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{tab=b.dataset.go;playing=null;sel=null;render()});
 }
 const _render=render;render=function(){_render.apply(this,arguments);try{decorate()}catch(e){}};

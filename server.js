@@ -306,7 +306,7 @@ async function directPost(uid,other,text){
  const sender=users.find(user=>user.id===uid);
  await sb('arcade_direct_messages',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({sender_id:uid,recipient_id:other,sender_name:sender.username||'Player',text:text.slice(0,300)})});
 }
-const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webp':'image/webp'};
+const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.webp':'image/webp'};
  http.createServer(async(req,res)=>{req.res=res;const u=new URL(req.url,'http://x');res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type, Authorization');if(req.method==='OPTIONS'){res.writeHead(204);return res.end()}
  try{
   if(u.pathname==='/api/status'&&req.method==='GET'){const out={ok:true,durable,provider:durable?'supabase':'local'};if(durable){out.supabaseProject=SB_URL.replace(/^https?:\/\//,'').split('.')[0];const checks={'users.stats':'arcade_users?select=stats,updated_at&limit=1','table arcade_chat':'arcade_chat?select=id&limit=1','table arcade_direct_messages':'arcade_direct_messages?select=id&limit=1','table arcade_rooms':'arcade_rooms?select=room_code&limit=1'};out.missing=[];for(const [label,q] of Object.entries(checks)){try{await sb(q)}catch(e){out.missing.push(label+' -> '+e.message)}}out.schemaOk=out.missing.length===0}return json(res,200,out)}
