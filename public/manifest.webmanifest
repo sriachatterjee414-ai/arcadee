@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "Mochi Arcade",
+  "short_name": "Mochi Arcade",
+  "description": "A cozy arcade of cute games, friends and little rewards.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff5fb",
+  "theme_color": "#fff5fb",
+  "icons": [
+    {"src": "/icons/mochi-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/mochi-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

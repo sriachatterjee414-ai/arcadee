@@ -138,3 +138,17 @@ test('Photo Booth rooms create, join, share captures and signals, and protect pr
  for(const suffix of ['', '/shots','/signal'])assert.equal((await api('/api/rooms/'+room.code+suffix)).status,403);
  assert.equal((await api('/api/rooms/'+room.code+'/move',{image:jpeg})).status,403);
 });
+
+test('phone install manifest and icons are served with valid types and dimensions',async()=>{
+ await ready;
+ const origin='http://localhost:'+port;
+ const response=await fetch(origin+'/manifest.webmanifest');assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/application\/manifest\+json/);
+ const manifest=await response.json();assert.equal(manifest.display,'standalone');assert.ok(manifest.name&&manifest.short_name);assert.equal(manifest.start_url,'/');assert.equal(manifest.scope,'/');
+ for(const icon of manifest.icons){
+  const image=await fetch(origin+icon.src);assert.equal(image.status,200);assert.match(image.headers.get('content-type'),/image\/png/);const bytes=Buffer.from(await image.arrayBuffer()),[width,height]=icon.sizes.split('x').map(Number);
+  assert.equal(bytes.subarray(1,4).toString(),'PNG');assert.equal(bytes.readUInt32BE(16),width);assert.equal(bytes.readUInt32BE(20),height);
+ }
+ const apple=Buffer.from(await (await fetch(origin+'/icons/mochi-180.png')).arrayBuffer());assert.equal(apple.readUInt32BE(16),180);
+ const page=await (await fetch(origin+'/')).text();assert.match(page,/rel="manifest"/);assert.match(page,/rel="apple-touch-icon"/);
+ assert.equal((await fetch(origin+'/sw.js')).status,200);assert.equal((await fetch(origin+'/offline.html')).status,200);
+});
