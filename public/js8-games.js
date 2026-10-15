@@ -141,7 +141,7 @@ function jenga(){
 }
 /* Snake */
 function snake(){
-  const N=15,S=20,SW=30+LV*18;let sn=[[7,7],[6,7],[5,7]],d=[1,0],nd=[1,0],ap=[11,7],sc=0;
+  const N=15,S=20,SW=30+LV*18;let sn=[[7,7],[6,7],[5,7]],d=[1,0],nd=[1,0],ap=[11,7],sc=0,paused=false,revived=false;
   frame('snake','<div class="msg" id="m">Score 0 (win at '+SW+')</div><canvas id="cv" width="300" height="300" style="width:100%;max-width:300px;display:block;margin:0 auto;background:var(--bg);border-radius:12px;touch-action:none"></canvas><div class="row" style="margin-top:8px"><button class="btn sm" data-d="U">↑</button><button class="btn sm" data-d="L">←</button><button class="btn sm" data-d="D">↓</button><button class="btn sm" data-d="R">→</button></div>');
   const cv=$('#cv'),c=cv.getContext('2d'),D={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
   const turn=k=>{const v=D[k];if(v[0]!==-d[0]||v[1]!==-d[1])nd=v};
@@ -150,13 +150,15 @@ function snake(){
   cv.ontouchstart=e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY};
   cv.ontouchend=e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<15)return;turn(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'))};
   const place=()=>{do{ap=[Math.floor(Math.random()*N),Math.floor(Math.random()*N)]}while(sn.some(p=>p[0]===ap[0]&&p[1]===ap[1]))};
-  const draw=()=>{c.clearRect(0,0,300,300);c.font='18px serif';c.fillText('🍎',ap[0]*S+1,ap[1]*S+17);sn.forEach((p,i)=>{c.fillStyle=i?'#ff4d94':'#8e2f5f';c.fillRect(p[0]*S+1,p[1]*S+1,S-2,S-2)})};
+  const draw=()=>{c.clearRect(0,0,300,300);c.font='18px serif';c.fillText('🍎',ap[0]*S+1,ap[1]*S+17);sn.forEach((p,i)=>{c.fillStyle=i?'#ff4d94':'#8e2f5f';c.beginPath();c.roundRect(p[0]*S+1,p[1]*S+1,S-2,S-2,7);c.fill();if(!i){c.fillStyle='#fff';c.fillRect(p[0]*S+5,p[1]*S+4,4,4);c.fillRect(p[0]*S+12,p[1]*S+4,4,4)}})};
+  const finish=()=>end('snake',sc>=SW,sc>=SW?'Great run!':'Game over',sc);
   const t=setInterval(()=>{
+    if(paused){if(!$('#revive'))clearInterval(t);return}
     if(!document.body.contains(cv)){clearInterval(t);return}
     d=nd;const h=[sn[0][0]+d[0],sn[0][1]+d[1]];
-    if(h[0]<0||h[1]<0||h[0]>=N||h[1]>=N||sn.some(p=>p[0]===h[0]&&p[1]===h[1])){clearInterval(t);return end('snake',sc>=SW,sc>=SW?'Great run! 🐍🎉':'Game over 🐍',sc)}
+    if(h[0]<0||h[1]<0||h[0]>=N||h[1]>=N||sn.some(p=>p[0]===h[0]&&p[1]===h[1])){if(!revived){paused=true;offerRevive('snake',sc,()=>{revived=true;paused=false;sn=[[7,7],[6,7],[5,7]];d=nd=[1,0];place();draw()},()=>{clearInterval(t);finish()});return}clearInterval(t);return finish()}
     sn.unshift(h);
-    if(h[0]===ap[0]&&h[1]===ap[1]){sc+=10;$('#m').textContent=`Score ${sc} (win at ${SW})`;place()}else sn.pop();
+    if(h[0]===ap[0]&&h[1]===ap[1]){sc+=10;$('#m').textContent=`Score ${sc} (win at ${SW})`;if(sn.length===N*N){clearInterval(t);return finish()}place()}else sn.pop();
     draw();
   },Math.max(85,150-LV*2.2));
   draw();

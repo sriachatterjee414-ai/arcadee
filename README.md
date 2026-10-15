@@ -37,3 +37,17 @@ Online invite rooms currently support Tic-Tac-Toe and Rock-Paper-Scissors. Both 
 Render linked GitHub services normally redeploy when the connected branch receives a new commit.
 
 The personal chat view refreshes messages while it is open. Photo capture uses the browser's camera permission or an uploaded image; images stay in the browser and are not uploaded to the server.
+
+## Cute arcade restoration
+
+- Rabbit Mochi is free; unlock Cat (80 diamonds) or Puppy (100 diamonds), then equip them in Shop. Six accessory choices include a blinking, bobbing companion wearing a party hat. Equipment syncs with the account.
+- Daily check-in: 3 diamonds plus 10–45 coins. Each completed daily task: 2 diamonds plus its listed coins.
+- Games: 2 coins per completed round, 1 per 20 points, 10 per win, and 20 per unlocked level, capped at 500 coins per reward claim. Saved score checkpoints prevent duplicate reward claims. This casual arcade uses client-reported scores; rewards are not suitable for real-money purchases or competitive anti-cheat guarantees.
+- Lucky box: 30 coins; 80% chance of 10–50 coins, 20% chance of 1–3 diamonds. The shop displays these odds.
+- Snake and Flappy offer one 25-coin revive per run, retaining the score; finishing saves the result and offers Play again or Exit.
+- Tic-Tac-Toe, RPS, Ludo, Chess, Snakes & Ladders, Pong, Candy Breaker and 2048 use scores without level selection. Snake, Flappy and Match 3 retain progression.
+- Photo Booth includes colour filters, draggable bunny/kitty ears, image upload and downloadable strips. All 43 games/tools and chat remain available.
+
+**Deployment:** Run the updated `SUPABASE_SCHEMA.sql` before deploying to a Supabase-backed server: it adds `diamonds`, `equipment` and `reward_state`. Existing accounts and scores are preserved. Without Supabase, set `DATA_FILE` to a persistent disk path for durable local storage.
+
+Validation: `node --test tests/economy.cjs` runs the isolated wallet integration test using Node's built-in test runner and a temporary local server on an available port.

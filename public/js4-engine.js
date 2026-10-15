@@ -4,7 +4,7 @@ function fit(){
 addEventListener('resize',()=>{if(playing)fit()});
 function frame(g,inner){
   const G=GAMES.find(x=>x.id===g);
-  $('#view').innerHTML=`<section class="card game-panel"><div class="top"><b>${G.n}</b><b style="color:var(--acc2)">Level ${LV}</b></div><div id="game">${inner}</div></section>`;
+  $('#view').innerHTML=`<section class="card game-panel"><div class="top"><b>${G.n}</b><b style="color:var(--acc2)">${G.tool?'':hasLevels(g)?'Level '+LV:'Best '+(st(g).best||0)}</b></div><div id="game">${inner}</div></section>`;
   document.body.classList.add('pl');setTimeout(fit,0);
   return $('#game');
 }
@@ -23,8 +23,11 @@ function end(g,won,text,score=0,nr){
   snd(won?'win':'lose');
   if(!nr)record(g,won,score);
   const el=$('#game');if(!el)return;
-  const nx=won&&LV<MAX_LEVEL;
-  el.innerHTML=`<div class="msg ${won?'win':'lose'}">${text}</div><div class="msg" style="font-size:15px">Score: ${score} · Level ${LV}</div><div class="row"><button class="btn" id="again">🔁 Replay</button>${nx?'<button class="btn" id="nxt">Next level ➜</button>':''}<button class="btn ghost" id="ex">Exit</button></div>`;
+  const nx=hasLevels(g)&&won&&LV<MAX_LEVEL;
+  el.innerHTML=`<div class="msg ${won?'win':'lose'}">${text}</div><div class="msg" style="font-size:15px">Score: ${score}${hasLevels(g)?' · Level '+LV:''}</div><p id="roundReward" role="status">Saving rewards…</p><div class="row"><button class="btn" id="again">🔁 Replay</button>${nx?'<button class="btn" id="nxt">Next level ➜</button>':''}<button class="btn ghost" id="ex">Exit</button></div>`;
+  if(!nr)saveQueue.then(()=>apiJson('/api/game/reward',{method:'POST',body:JSON.stringify({game:g})})).then(p=>{accountProfile=p;if(document.body.contains(el)&&$('#roundReward'))$('#roundReward').textContent=`+${p.gameReward} coins · Best ${st(g).best||0}`}).catch(e=>{if($('#roundReward'))$('#roundReward').textContent='Reward not saved: '+e.message});
+  else if($('#roundReward'))$('#roundReward').remove();
+  $('#again').textContent='Play again';
   $('#again').onclick=()=>startGame(g);
   if(nx)$('#nxt').onclick=()=>{LV++;startGame(g)};
   $('#ex').onclick=()=>{playing=null;render()};
@@ -225,4 +228,16 @@ function chess2(pvp){
   bdc.onpointerdown=e=>{const x=e.target.closest('button');if(!x||busy)return;const i=+x.dataset.i,c=b[i];if(c&&isW(c)===wt){sel=i;paint()}};
   bdc.onpointerup=e=>{const t=document.elementFromPoint(e.clientX,e.clientY),x=t&&t.closest('button[data-i]');if(x&&sel>=0&&+x.dataset.i!==sel)tap(+x.dataset.i)};
   paint();
+}
+
+function offerRevive(game,score,resume,finish){
+ const panel=$('#game'),nodes=[...panel.childNodes];
+ panel.replaceChildren();
+ panel.innerHTML=`<div class="msg">One more chance, Mochi?</div><p>Score ${score} · Continue this run for 25 coins, or finish and collect your reward.</p><div class="row"><button class="btn" id="revive">Revive · 🪙 25</button><button class="btn ghost" id="finishRun">Finish run</button></div><p id="reviveStatus" role="status"></p>`;
+ $('#finishRun').onclick=finish;
+ $('#revive').onclick=async()=>{
+  const button=$('#revive');button.disabled=true;$('#finishRun').disabled=true;
+  try{accountProfile=await apiJson('/api/game/revive',{method:'POST',body:'{}'});if(!document.body.contains(panel))return;panel.replaceChildren(...nodes);resume()}
+  catch(e){if($('#reviveStatus')){$('#reviveStatus').textContent=e.message;button.disabled=false;$('#finishRun').disabled=false}}
+ };
 }
