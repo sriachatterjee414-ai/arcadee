@@ -118,3 +118,23 @@ test('global and personal chats preserve unicode and only expose DMs to particip
  token=outsider.token;assert.equal((await api('/api/direct/'+a.id)).messages.length,0);
  token='';assert.equal((await api('/api/direct/'+a.id)).status,401);
 });
+
+test('Photo Booth rooms create, join, share captures and signals, and protect private strips',async()=>{
+ await ready;
+ const host=await api('/api/register',{name:'BoothHost',pin:'123456'}),guest=await api('/api/register',{name:'BoothGuest',pin:'123456'}),other=await api('/api/register',{name:'BoothOther',pin:'123456'});
+ token='';assert.equal((await api('/api/rooms',{game:'booth'})).status,401);
+ token=host.token;const room=await api('/api/rooms',{game:'booth'});
+ assert.equal(room.game,'booth');assert.equal(room.status,'waiting');assert.match(room.code,/^[A-HJ-NP-Z2-9]{6}$/);assert.deepEqual(room.counts,{host:0,guest:0});
+ token=guest.token;const joined=await api('/api/rooms/'+room.code+'/join',{});assert.equal(joined.game,'booth');assert.equal(joined.status,'playing');assert.equal(joined.role,'guest');
+ const jpeg='data:image/jpeg;base64,/9j/2Q==';
+ const guestShot=await api('/api/rooms/'+room.code+'/move',{image:jpeg});assert.equal(guestShot.counts.guest,1);
+ token=host.token;const hostShot=await api('/api/rooms/'+room.code+'/move',{image:jpeg});assert.equal(hostShot.counts.host,1);assert.equal(hostShot.counts.guest,1);
+ assert.deepEqual((await api('/api/rooms/'+room.code+'/shots')).shots,{host:[jpeg],guest:[jpeg]});
+ const signal={type:'ready'};assert.equal((await api('/api/rooms/'+room.code+'/signal',{data:signal})).ok,true);
+ token=guest.token;assert.deepEqual((await api('/api/rooms/'+room.code+'/signal')).messages,[{data:signal}]);assert.deepEqual((await api('/api/rooms/'+room.code+'/signal')).messages,[]);
+ token=host.token;const cleared=await api('/api/rooms/'+room.code+'/move',{action:'clear'});assert.deepEqual(cleared.counts,{host:0,guest:1});
+ token=other.token;
+ assert.equal((await api('/api/rooms/'+room.code+'/join',{})).status,409);
+ for(const suffix of ['', '/shots','/signal'])assert.equal((await api('/api/rooms/'+room.code+suffix)).status,403);
+ assert.equal((await api('/api/rooms/'+room.code+'/move',{image:jpeg})).status,403);
+});

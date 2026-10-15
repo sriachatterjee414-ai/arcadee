@@ -191,15 +191,15 @@ async function rewardGame(uid,game){
 
 const ROOM_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const roomCode=()=>Array.from({length:6},()=>ROOM_ALPHABET[crypto.randomInt(ROOM_ALPHABET.length)]).join('');
-function roomGame(room){return room.state?.kind==='jenga'?'jenga':room.game}
-function newRoomState(game){if(game==='jenga')return{kind:'jenga',blocks:Array.from({length:9},()=>[1,1,1]),turn:'host',pulls:0,winner:null,fallen:false};if(game==='booth')return{shots:{host:[],guest:[]}};return game==='ttt'?{board:Array(9).fill(null),turn:'host',winner:null,draw:false}:{round:1,scores:{host:0,guest:0},picks:{},lastResult:null}}
+function roomGame(room){return room.game==='rps'&&['jenga','booth'].includes(room.state?.kind)?room.state.kind:room.game}
+function newRoomState(game){if(game==='jenga')return{kind:'jenga',blocks:Array.from({length:9},()=>[1,1,1]),turn:'host',pulls:0,winner:null,fallen:false};if(game==='booth')return{kind:'booth',shots:{host:[],guest:[]}};return game==='ttt'?{board:Array(9).fill(null),turn:'host',winner:null,draw:false}:{round:1,scores:{host:0,guest:0},picks:{},lastResult:null}}
 async function getRoom(code){
  if(durable){const rows=await sb('arcade_rooms?select=*&room_code=eq.'+encodeURIComponent(code)+'&limit=1');if(!rows[0])throw Object.assign(new Error('Room not found. Check the code and try again.'),{code:404});return rows[0]}
  const room=local.rooms[code];if(!room)throw Object.assign(new Error('Room not found. Check the code and try again.'),{code:404});return room;
 }
 function roomView(room,uid){
  const role=uid===room.host_id?'host':'guest',opponent=role==='host'?'guest':'host',state=room.state||{};
- if(room.game==='booth'){const sh=state.shots||{};return {code:room.room_code,game:'booth',status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,counts:{host:(sh.host||[]).length,guest:(sh.guest||[]).length}}}
+ if(roomGame(room)==='booth'){const sh=state.shots||{};return {code:room.room_code,game:'booth',status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,counts:{host:(sh.host||[]).length,guest:(sh.guest||[]).length}}}
  if(roomGame(room)==='jenga')return {code:room.room_code,game:'jenga',status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,blocks:state.blocks,turn:state.turn,pulls:state.pulls,winner:state.winner,fallen:state.fallen};
  if(room.game==='ttt')return {code:room.room_code,game:room.game,status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,board:state.board||Array(9).fill(null),turn:state.turn,winner:state.winner,draw:!!state.draw};
  return {code:room.room_code,game:room.game,status:room.status,hostName:room.host_name,guestName:room.guest_name||null,role,round:state.round||1,scores:state.scores||{host:0,guest:0},myPick:(state.picks||{})[role]||null,opponentReady:!!(state.picks||{})[opponent],lastResult:state.lastResult||null,winner:state.winner||null};
@@ -208,8 +208,8 @@ async function createRoom(uid,game){
  if(!['ttt','rps','booth','jenga'].includes(game))throw Object.assign(new Error('Online play is available for Tic-Tac-Toe, Rock-Paper-Scissors, Jenga and Photo Booth.'),{code:400});
  const u=await getAccount(uid),name=u.username||u.name||'Player';let code,room;
  for(let i=0;i<4;i++){code=roomCode();try{await getRoom(code)}catch(e){if(e.code===404)break;throw e}}
- // Jenga uses the existing rps room slot plus a state discriminator so older SQL constraints remain compatible.
- room={room_code:code,game:game==='jenga'?'rps':game,host_id:uid,host_name:name,guest_id:null,guest_name:null,status:'waiting',state:newRoomState(game),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+ // Keep new room kinds in an original storage slot so existing database constraints need no migration.
+ room={room_code:code,game:['jenga','booth'].includes(game)?'rps':game,host_id:uid,host_name:name,guest_id:null,guest_name:null,status:'waiting',state:newRoomState(game),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
  if(durable)await sb('arcade_rooms',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(room)});else{local.rooms[code]=room;await saveLocal()}
  return roomView(room,uid);
 }
@@ -256,7 +256,7 @@ async function roomMove(uid,room,move){
   if(winner)try{await recordOnlineResult(saved,winner==='host'?room.host_id:room.guest_id,false)}catch(e){console.error('Could not record online Jenga result:',e.message)}
   return roomView(saved,uid);
  }
- if(room.game==='booth'){
+ if(roomGame(room)==='booth'){
   let current=room;
   for(let i=0;i<3;i++){
    const sh=(current.state&&current.state.shots)||{},shots={host:[...(sh.host||[])],guest:[...(sh.guest||[])]};
@@ -285,7 +285,7 @@ async function roomMove(uid,room,move){
  const saved=await saveRoom(room,{state:next,status});if(status==='complete')try{const winnerId=next.winner==='host'?room.host_id:room.guest_id;await recordOnlineResult(room,winnerId,false)}catch(e){console.error('Could not record online game result:',e.message)}return roomView(saved,uid);
 }
 async function nextRoomRound(uid,room){
- const role=roomRole(room,uid),state=room.state||{};if(room.game!=='rps'||room.status!=='playing'||!state.lastResult)throw Object.assign(new Error('The next round is not ready yet.'),{code:409});
+ const role=roomRole(room,uid),state=room.state||{};if(roomGame(room)!=='rps'||room.status!=='playing'||!state.lastResult)throw Object.assign(new Error('The next round is not ready yet.'),{code:409});
  const next={...state,round:(state.round||1)+1,picks:{},lastResult:null};return roomView(await saveRoom(room,{state:next}),uid);
 }
 async function chatGet(){if(!durable)return local.chat.slice(-100);const rows=await sb('arcade_chat?select=id,user_id,text,created_at,username&order=id.desc&limit=100');return rows.reverse().map(x=>({id:x.user_id,name:x.username||'Player',text:x.text,createdAt:x.created_at}))}
