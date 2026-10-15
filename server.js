@@ -11,7 +11,8 @@ const SHOP_ITEMS=[
   {id:'ocean',name:'Ocean Arcade Theme',description:'A cool blue-green look for your games.',price:70,type:'theme'},
   {id:'sunset',name:'Sunset Arcade Theme',description:'Warm peach and coral colors for your arcade.',price:70,type:'theme'}
 ];
-const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop']);
+// CHANGED: added flappy, breakout, pong, lights (the 4 new games)
+const VALID_GAMES=new Set(['snake','tiles','ttt','rps','mem','react','guess','math','bird','g2048','word','m3','jenga','ludo','chess','bubble','beat','boba','fruit','golf','cat','race','cook','snl','sudoku','mystery','tetris','water','wordsearch','photo','simon','whack','slide','sketch','mines','c4','hangman','hilo','stroop','flappy','breakout','pong','lights']);
 let local = {};
 try{local=JSON.parse(fs.readFileSync(FILE,'utf8'))}catch(e){local={}}
 if(!local || typeof local!=='object' || Array.isArray(local)) local={};

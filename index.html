@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arcade</title>
+<link rel="stylesheet" href="style1.css">
+<link rel="stylesheet" href="style2.css">
+</head>
+<body>
+<div class="app">
+<aside class="side" id="side"></aside>
+<main>
+  <h1>Arcade</h1>
+  <div class="stats" id="stats"></div>
+  <div id="view"></div>
+  <p class="note" id="note"></p>
+</main>
+</div>
+<div id="gate"></div>
+<nav class="bar"><button class="circ" id="thm" aria-label="Choose colors">✦</button><button class="circ" id="snd" aria-label="Sound">🔊</button><button class="btn" id="bk">⬅ Back</button></nav>
+
+<!-- Load order matters: these all share one global scope -->
+<script src="js1-data.js"></script>
+<script src="js2-core.js"></script>
+<script src="js3-online.js"></script>
+<script src="js4-engine.js"></script>
+<script src="js5-board.js"></script>
+<script src="js6-arcade.js"></script>
+<script src="js7-kitchen.js"></script>
+<script src="js8-games.js"></script>
+<script src="js9-init.js"></script>
+<script src="cute-skin.js"></script>
+</body>
+</html>

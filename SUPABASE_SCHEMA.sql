@@ -1,4 +1,4 @@
--- Run this in Supabase SQL Editor.
+-- Run this in Supabase SQL Editor. Safe to run again on an existing project.
 create table if not exists public.arcade_users (
   id text primary key,
   username text not null,
@@ -38,7 +38,8 @@ create table if not exists public.arcade_direct_messages (
 );
 create table if not exists public.arcade_rooms (
   room_code text primary key check (room_code ~ '^[A-HJ-NP-Z2-9]{6}$'),
-  game text not null check (game in ('ttt', 'rps')),
+  -- CHANGED: 'booth' added so online Photo Booth rooms can be created
+  game text not null check (game in ('ttt', 'rps', 'booth')),
   host_id text not null references public.arcade_users(id) on delete cascade,
   host_name text not null,
   guest_id text references public.arcade_users(id) on delete cascade,
@@ -48,6 +49,9 @@ create table if not exists public.arcade_rooms (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- CHANGED: for databases that already exist, widen the old constraint
+alter table public.arcade_rooms drop constraint if exists arcade_rooms_game_check;
+alter table public.arcade_rooms add constraint arcade_rooms_game_check check (game in ('ttt', 'rps', 'booth'));
 create index if not exists arcade_rooms_updated_idx on public.arcade_rooms(updated_at desc);
 create index if not exists arcade_chat_created_idx on public.arcade_chat(created_at desc);
 create index if not exists arcade_direct_sender_recipient_idx on public.arcade_direct_messages(sender_id, recipient_id, id);
