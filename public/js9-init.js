@@ -15,6 +15,12 @@ async function standaloneDb(){
   const API=window.ARCADE_API||'';const token=localStorage.getItem('ah_token')||'';if(!token)return null;
   try{const r=await fetch(API+'/api/session',{headers:{Authorization:'Bearer '+token}});if(!r.ok)return null;const v=await r.json();myId=v.id;myName=v.name||localStorage.getItem('ah_name')||'';const auth=()=>({Authorization:'Bearer '+token,'Content-Type':'application/json'});return{doc:path=>({set:async d=>{const response=await fetch(API+'/api/'+path,{method:'PUT',headers:auth(),body:JSON.stringify(d)});if(!response.ok){const result=await response.json().catch(()=>({}));throw new Error(result.error||`Save failed (${response.status}).`)}return response}}),collection:()=>({onSnapshot:cb=>{const pull=()=>fetch(API+'/api/players').then(r=>r.json()).then(rows=>cb({docs:rows.map(x=>({id:x.id,data:()=>x.data}))})).catch(()=>{});pull();setInterval(pull,5000)}})}}catch(e){return null}
 }
+// Remote scores update counters without resetting inputs, rooms, or the current screen.
+function refreshLiveStats(){
+  renderStats();
+  document.querySelectorAll('#gameGrid [data-g]').forEach(card=>{const label=card.querySelector('small'),id=card.dataset.g;if(label)label.textContent=`Best ${st(id).best||0}${hasLevels(id)?' · Level '+(st(id).lv||1):''}`});
+  if(!playing&&['lb','fol'].includes(tab))render();
+}
 /* Init */
 $('#bk').onclick=()=>{if(playing)playing=null;else if(sel)sel=null;else tab='play';render()};
 const palettes={
@@ -49,14 +55,14 @@ render();gate();
     if(user){try{myId=await user.id()}catch(e){}try{const v=await user.me();if(!myName)myName=(v&&v.name)||''}catch(e){}}
     restoreLocalStats();
     if(myId!=='local')await loadAccountProfile();
-    if(!db||myId==='local'){db=null;render();return}
+    if(!db||myId==='local'){db=null;renderSide();refreshLiveStats();return}
     db.collection('players').onSnapshot(s=>{
       players={};s.docs.forEach(d=>{players[d.id]=d.data()});
       const m=players[myId];if(m){const remote=m.stats||{},merged=mergeStats(remote,me.stats),needsSync=JSON.stringify(merged)!==JSON.stringify(remote);me.stats=merged;if(!loaded)me.following=m.following||[];if(needsSync)save()}loaded=true;
       delete players[myId];
-      if(user&&user.profiles){user.profiles(Object.keys(players)).then(ps=>{for(const k in ps){names[k]=ps[k]&&ps[k].name||''}if(!playing&&tab!=='chat')render()}).catch(()=>{})}
-      if(!playing&&tab!=='chat')render();
+      if(user&&user.profiles){user.profiles(Object.keys(players)).then(ps=>{for(const k in ps){names[k]=ps[k]&&ps[k].name||''}refreshLiveStats()}).catch(()=>{})}
+      refreshLiveStats();
     },()=>{});
-    render();
+    renderSide();refreshLiveStats();
   }catch(e){db=null}
 })();

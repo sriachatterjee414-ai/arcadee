@@ -25,14 +25,14 @@ function bstack(a,w,plate){
   const n=7,H=n*13+22;
   return `<svg viewBox="0 0 100 ${H}" width="${w}" height="${w*H/100}">${plate?`<ellipse cx="50" cy="${H-4}" rx="48" ry="6" fill="#fff" stroke="#d9c7c0" stroke-width="2"/>`:''}${a.map((k,i)=>`<g transform="translate(0 ${H-12-(i+1)*13})">${SHP[k](i>0&&(k===0||k===16))}</g>`).join('')}</svg>`;
 }
-const custSVG=(m,h,sh,vip)=>`<svg viewBox="0 0 100 104" width="84"><rect x="22" y="78" width="56" height="26" rx="12" fill="${sh}"/><circle cx="50" cy="52" r="28" fill="#ffd9b3"/><path d="M20 50q0-34 30-34t30 34q-14-14-30-14T20 50z" fill="${h}"/>${vip?'<polygon points="30,20 36,6 50,16 64,6 70,20" fill="#ffd400"/>':''}<circle cx="40" cy="54" r="3.5" fill="#222"/><circle cx="60" cy="54" r="3.5" fill="#222"/>${m===2?'<path d="M32 44l16 5M68 44l-16 5" stroke="#222" stroke-width="3"/><path d="M80 30l6-6M84 38l8-2" stroke="#e5484d" stroke-width="3"/>':''}<path d="${['M38 66q12 12 24 0','M40 70h20','M38 74q12-12 24 0'][m]}" stroke="#5b1a3a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
-const chefSVG='<svg viewBox="0 0 100 104" width="70"><rect x="30" y="4" width="40" height="22" rx="11" fill="#fff" stroke="#ddd"/><rect x="34" y="20" width="32" height="10" fill="#fff" stroke="#ddd"/><circle cx="50" cy="52" r="24" fill="#ffd9b3"/><circle cx="42" cy="50" r="3" fill="#222"/><circle cx="58" cy="50" r="3" fill="#222"/><path d="M42 62q8 8 16 0" stroke="#5b1a3a" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="28" y="78" width="44" height="24" rx="10" fill="#fff" stroke="#ddd"/></svg>';
+const custSVG=(m,h,shirt,vip)=>scenePet(m===2?'dog':shirt==='#ff4d94'?'rabbit':'cat',m===2?'#f9ddbd':'#fff4e9',!!vip);
+const chefSVG=scenePet('rabbit','#fff4e9',true);
 function cook(){
   const NEED=3+Math.floor(LV*.55),CAP=Math.min(4,1+Math.floor(LV/2)),HAIR=['#5b3a29','#222','#c9a227','#b5471f','#7d7d7d'],SH=['#ff4d94','#3b82f6','#2fbf71','#f59e0b','#8e2f5f'];
   const AV=[0,...(LV>=2?[1]:[]),...(LV>=3?[2]:[]),...(LV>=5?[3]:[]),...(LV>=7?[4]:[])],CP=LV<3?[0,1]:LV<5?[0,1,2]:[0,1,2,2,3],PEOPLE=['Maya','Theo','Ari','Nina','Kai','Remy','Jo','Sage'];
   const R=a=>a[Math.floor(Math.random()*a.length)];
   let lives=3,served=0,pts=0,queue=[],selected=null,spawned=0,nextId=0,finished=false,timer=null;
-  frame('cook',`<div class="kitchen-game"><div class="kitchen-status" id="scoreline"></div><section class="service-scene"><div class="customer-line" id="orders"></div><div class="server-card">${chefSVG}<div><b>Chef & server</b><small>Build it, then bring it to the table.</small></div><span class="counter-lamp">OPEN</span></div></section><div class="kitchen-work"><section class="recipe-ticket" id="orderCard"></section><section class="plate-ticket"><div class="plate-title">Serving tray</div><div id="pl"></div><div class="row kitchen-actions"><button class="btn" id="sv">Serve to customer</button><button class="btn ghost" id="un">Undo</button></div></section></div><section class="ingredient-panel"><div class="ingredient-title">Ingredient containers</div><p class="bin-hint">Pick each item in order. Hot ingredients need cooking first.</p><div id="ig" class="ingredient-grid"></div></section><p class="kitchen-message" id="m" aria-live="polite"></p></div>`);
+  frame('cook',`<div class="scene-title"><small>THE LITTLE LUNCH CLUB</small><h2>Mochi’s cozy kitchen</h2><p>Made with love, one layer at a time.</p></div><div class="kitchen-game"><div class="kitchen-status" id="scoreline"></div><section class="service-scene"><div class="customer-line" id="orders"></div><div class="server-card">${chefSVG}<div><b>Chef & server</b><small>Build it, then bring it to the table.</small></div><span class="counter-lamp">OPEN</span></div></section><div class="kitchen-work"><section class="recipe-ticket" id="orderCard"></section><section class="plate-ticket"><div class="plate-title">Serving tray</div><div id="pl"></div><div class="row kitchen-actions"><button class="btn" id="sv">Serve to customer</button><button class="btn ghost" id="un">Undo</button></div></section></div><section class="ingredient-panel"><div class="ingredient-title">Ingredient containers</div><p class="bin-hint">Pick each item in order. Hot ingredients need cooking first.</p><div id="ig" class="ingredient-grid"></div></section><p class="kitchen-message" id="m" aria-live="polite"></p></div>`);
   const active=()=>queue.find(o=>o.id===selected);
   function addOrder(){
     if(spawned>=NEED)return;
@@ -55,9 +55,9 @@ function cook(){
     if(o.dish.prep!=null)$('#cookItem').onclick=()=>{
       const current=active();if(!current||current.cooked||current.cooking)return;
       current.cooking=true;paintOrder();
-      setTimeout(()=>{const ready=queue.find(x=>x.id===current.id);if(!ready||!document.body.contains($('#orders')))return;ready.cooking=false;ready.cooked=true;snd('ding');if(ready.id===selected){$('#m').textContent=`${ING[ready.dish.prep]} is ready. Add it to the tray.`;paintOrder()}},1800);
+      gameTimeout(()=>{const ready=queue.find(x=>x.id===current.id);if(!ready||!document.body.contains($('#orders')))return;ready.cooking=false;ready.cooked=true;snd('ding');if(ready.id===selected){$('#m').textContent=`${ING[ready.dish.prep]} is ready. Add it to the tray.`;paintOrder()}},1800);
     };
-    $('#pl').innerHTML=`<div class="tray-board">${o.plate.length?o.plate.map((k,i)=>`<div class="tray-layer"><span>${i+1}</span><svg viewBox="0 0 100 26" aria-hidden="true">${SHP[k](true)}</svg><b>${ING[k]}</b></div>`).join(''):'<div class="plate-empty">Tap ingredients to build the stack</div>'}${o.extraPicked?`<div class="tray-extra">${o.extraPicked.e} ${o.extraPicked.name}</div>`:''}</div>`;
+    $('#pl').innerHTML=`<div class="tray-board">${o.plate.length?`<div class="plated-food">${bstack(o.plate,190,true)}</div><small class="plate-caption">${o.plate.map(k=>ING[k]).join(' · ')}</small>`:'<div class="plate-empty">Tap ingredients to build the stack</div>'}${o.extraPicked?`<div class="tray-extra">${o.extraPicked.e} ${o.extraPicked.name}</div>`:''}</div>`;
     const allowed=new Set([o.dish.base,...o.dish.bins,...(o.dish.prep!=null?[o.dish.prep]:[]),...(o.dish.top>=0?[o.dish.top]:[])]);
     const groups=[['Breads & bases',[0,8,12,16]],['Stove & microwave',[1,5,13,15]],['Fresh & toppings',[2,3,4,6,7,9,10,11,14]]];
     $('#ig').innerHTML=groups.map(([name,items])=>{const available=items.filter(k=>allowed.has(k));return available.length?`<section class="ingredient-bin"><b>${name}</b><div>${available.map(k=>`<button class="ingredient" data-k="${k}" type="button"><svg viewBox="0 0 100 26" aria-hidden="true">${SHP[k](true)}</svg><span>${ING[k]}</span></button>`).join('')}</div></section>`:''}).join('')+`<section class="ingredient-bin sides-bin"><b>Sides & drinks</b><div>${SIDES.map(x=>`<button class="ingredient side-item ${o.extraPicked?.id===x.id?'picked':''}" data-side="${x.id}" type="button"><span>${x.e}</span><span>${x.name}</span></button>`).join('')}</div></section>`;
@@ -76,7 +76,7 @@ function cook(){
     }else{lives--;snd('buzz');o.plate=[];o.extraPicked=null;$('#m').textContent='That tray does not match the customer picture. Try again.';if(lives<=0)return finish(false,'The kitchen is out of chances.');paint()}
   };
   while(queue.length<CAP&&spawned<NEED)addOrder();paint();
-  timer=setInterval(()=>{
+  timer=gameInterval(()=>{
     if(!document.body.contains($('#orders'))||finished){clearInterval(timer);return}
     queue.forEach(o=>{o.left=Math.max(0,o.left-.1);o.mood=o.left/o.maxTime>.55?0:o.left/o.maxTime>.25?1:2});
     const expired=queue.filter(o=>o.left<=0);
@@ -89,18 +89,18 @@ function cook(){
 function simon(){
   const COL=['#ff4d6d','#3ddc84','#4cc9f0','#ffd400'],TG=3+LV*2;let seq=[],pos=0,busy=true,lit=-1;
   frame('simon','<div class="msg" id="m"></div><div id="sm" class="tb" style="grid-template-columns:1fr 1fr;gap:12px;max-width:320px"></div>');
-  const paint=()=>{$('#sm').innerHTML=COL.map((c,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:26px;background:${c};opacity:${lit===i?1:.45};box-shadow:${lit===i?'0 0 24px '+c:'none'};padding:0"></button>`).join('');$('#sm').querySelectorAll('button').forEach(b=>b.onclick=()=>tap(+b.dataset.i))};
+  const paint=()=>{$('#sm').innerHTML=COL.map((c,i)=>`<button data-i="${i}" aria-label="${['Heart','Clover','Cloud','Star'][i]} pad" style="aspect-ratio:1;border:0;border-radius:26px;background:${c};opacity:${lit===i?1:.45};box-shadow:${lit===i?'0 0 24px '+c:'none'};padding:0">${toyMark(['X','bud','O','star'][i])}</button>`).join('');$('#sm').querySelectorAll('button').forEach(b=>b.onclick=()=>tap(+b.dataset.i))};
   function show(){
     busy=true;pos=0;let i=0;$('#m').textContent=`Watch... ${seq.length}/${TG}`;
-    const t=setInterval(()=>{
+    const t=gameInterval(()=>{
       if(!document.body.contains($('#sm'))){clearInterval(t);return}
       if(i%2===0){if(i/2>=seq.length){clearInterval(t);lit=-1;paint();busy=false;$('#m').textContent='Your turn!';return}lit=seq[i/2];snd('t'+lit)}else lit=-1;
       paint();i++;
     },Math.max(220,450-LV*25));
   }
-  const next=()=>{seq.push(Math.floor(Math.random()*4));setTimeout(show,600)};
+  const next=()=>{seq.push(Math.floor(Math.random()*4));gameTimeout(show,600)};
   function tap(i){
-    if(busy)return;lit=i;snd('t'+i);paint();setTimeout(()=>{lit=-1;if(document.body.contains($('#sm')))paint()},160);
+    if(busy)return;lit=i;snd('t'+i);paint();gameTimeout(()=>{lit=-1;if(document.body.contains($('#sm')))paint()},160);
     if(i!==seq[pos])return end('simon',false,`Wrong pad! You reached ${seq.length-1}.`,(seq.length-1)*50);
     pos++;
     if(pos===seq.length){if(seq.length>=TG)return end('simon',true,'Perfect memory! 🎶',seq.length*60+LV*50);busy=true;next()}
@@ -113,7 +113,7 @@ function whack(){
   frame('whack','<div class="msg" id="m" style="font-size:15px"></div><div class="tb" id="wg" style="grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px"></div>');
   const paint=()=>{
     $('#m').textContent=`Hits ${hits}/${TG} · Misses ${miss}/${maxMisses} · ${Math.max(0,Math.ceil((T-(Date.now()-t0))/1000))}s`;
-    $('#wg').innerHTML=Array.from({length:9},(_,i)=>`<button data-i="${i}" style="aspect-ratio:1;border-radius:50%;border:4px solid #6d4c41;background:${i===up?'#c68642':'#5d4037'};font-size:40px;padding:0">${i===up?'🐹':''}</button>`).join('');
+    $('#wg').innerHTML=Array.from({length:9},(_,i)=>`<button data-i="${i}" style="aspect-ratio:1;border-radius:50%;border:4px solid #6d4c41;background:${i===up?'#c68642':'#5d4037'};font-size:40px;padding:0">${i===up?scenePet('dog','#eacaa6'):''}</button>`).join('');
     $('#wg').querySelectorAll('button').forEach(b=>b.onpointerdown=e=>{e.preventDefault();hit(+b.dataset.i)});
   };
   function hit(i){
@@ -121,8 +121,8 @@ function whack(){
     else{miss++;snd('buzz');if(miss>=maxMisses){clearInterval(tm);clearInterval(tm2);return end('whack',false,'Too many misses.',hits*50)}}
     paint();
   }
-  const tm2=setInterval(()=>{up=Math.floor(Math.random()*9);paint()},Math.max(450,900-LV*50));
-  const tm=setInterval(()=>{
+  const tm2=gameInterval(()=>{up=Math.floor(Math.random()*9);paint()},Math.max(450,900-LV*50));
+  const tm=gameInterval(()=>{
     if(!document.body.contains($('#wg'))){clearInterval(tm);clearInterval(tm2);return}
     if(Date.now()-t0>=T){clearInterval(tm);clearInterval(tm2);return end('whack',false,"Time's up!",hits*50)}
     paint();
@@ -137,7 +137,7 @@ function slide(){
   frame('slide','<div class="msg" id="m" style="font-size:15px"></div><div class="tb" id="sg" style="grid-template-columns:repeat('+N+',1fr);gap:5px;max-width:340px"></div>');
   const paint=()=>{
     $('#m').textContent=`Moves ${moves}. Tap or drag a tile into the gap.`;
-    $('#sg').innerHTML=g.map((v,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:12px;padding:0;font-size:${N>4?20:26}px;font-weight:800;color:#fff;background:${v?`hsl(${330-v*5},75%,${55+(v%3)*4}%)`:'transparent'};box-shadow:${v?'inset 0 -4px #0003':'none'}">${v||''}</button>`).join('');
+    $('#sg').innerHTML=g.map((v,i)=>`<button data-i="${i}" style="aspect-ratio:1;border:0;border-radius:12px;padding:0;font-size:${N>4?20:26}px;font-weight:800;color:#69496d;background:${v?['#ecc0d1','#b8d8cc','#d1c0e8','#f3dca8'][v%4]:'transparent'};box-shadow:${v?'inset 0 -4px #0003':'none'}">${v||''}</button>`).join('');
   };
   function mv(i){
     const z=g.indexOf(0);if(!nb(z).includes(i))return;
@@ -154,6 +154,7 @@ function slide(){
 function photo(){
   frame('photo','<div class="booth-layout"><section class="booth-capture"><div class="camera booth-viewer" id="boothViewer"><video id="cam" autoplay playsinline></video><img id="photoSource" alt="Selected photo"><canvas id="photoCanvas"></canvas><div id="photoEmpty" class="booth-empty">Your portrait booth</div><div id="liveSticker" class="live-sticker"></div><div id="countdown" class="countdown" aria-live="polite"></div></div><div class="booth-actions"><button class="btn" id="startCam">Enable camera</button><label class="btn ghost upload-btn">Choose image<input id="pickImg" type="file" accept="image/*"></label><button class="btn" id="startStrip" disabled>Take four photos</button></div><p id="boothStatus" class="booth-status">Allow camera access, then start your strip.</p></section><section class="booth-editor"><div class="editor-section"><b>Look filters</b><div class="photo-tools" id="filters"></div></div><div class="editor-section"><b>Face filters & overlays</b><div class="photo-tools" id="stickers"></div></div><div class="editor-section caption-tools"><label for="stripCaption">Strip caption</label><input id="stripCaption" maxlength="48" placeholder="A little moment" value="ARCADE PHOTO CLUB"><label for="captionFont">Font</label><select id="captionFont"><option value="Fredoka">Playful</option><option value="Quicksand">Clean</option><option value="Georgia">Classic</option><option value="cursive">Handwritten</option></select><label for="stripColor">Strip colour</label><input id="stripColor" type="color" value="#efe9da" aria-label="Choose strip colour"></div><div class="strip-heading"><b>Your photo strip</b><span id="shotCount">0 / 4</span></div><div id="strip" class="strip"></div><div class="booth-actions"><button class="btn" id="downloadStrip" disabled>Download strip</button><button class="btn ghost" id="clearStrip" disabled>New strip</button></div></section></div>');
   const v=$('#cam'),source=$('#photoSource'),viewer=$('#boothViewer'),cv=$('#photoCanvas'),ctx=cv.getContext('2d');let stream=null,filter='normal',sticker='bunny',shots=[],busy=false,pos={x:50,y:30};
+  gameCleanup(()=>stream?.getTracks().forEach(track=>track.stop()));
   const filters={vintage:'Vintage sepia',film:'Film B&W',soft:'Candy glow',warm:'Sunset',mono:'Soft mono',dream:'Dreamy haze',vivid:'Neon pop',fog:'Misty fog',cool:'Blue hour',normal:'Natural'};
   const looks={vintage:'sepia(.9) contrast(1.18) brightness(1.03) saturate(.85)',film:'grayscale(1) contrast(1.3) brightness(1.06) sepia(.12)',soft:'brightness(1.08) contrast(1.06) saturate(1.22)',warm:'sepia(.18) saturate(1.38) hue-rotate(-18deg)',mono:'grayscale(1) contrast(1.1)',dream:'brightness(1.1) saturate(.8) hue-rotate(14deg)',vivid:'saturate(1.45) contrast(1.08) brightness(1.12)',fog:'brightness(1.12) contrast(.9) saturate(.72)',cool:'saturate(.9) hue-rotate(18deg) brightness(1.05)',normal:'none'};
   const stickerSet=[...BOOTH_NEW_STICKERS,
@@ -185,7 +186,7 @@ function photo(){
     $('#downloadStrip').disabled=shots.length!==4;$('#clearStrip').disabled=!shots.length;
   }
   $('#startCam').onclick=async()=>{
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});v.srcObject=stream;v.style.display='block';source.style.display='none';$('#photoEmpty').style.display='none';v.style.filter=css();viewer.dataset.filter=filter;$('#startStrip').disabled=false;$('#boothStatus').textContent='Camera ready. Your four photos will be spaced three seconds apart.'}
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});if(!viewer.isConnected){stream.getTracks().forEach(track=>track.stop());return}v.srcObject=stream;v.style.display='block';source.style.display='none';$('#photoEmpty').style.display='none';v.style.filter=css();viewer.dataset.filter=filter;$('#startStrip').disabled=false;$('#boothStatus').textContent='Camera ready. Your four photos will be spaced three seconds apart.'}
     catch(e){$('#boothStatus').textContent='Camera permission was blocked. Choose an image to use the strip editor.'}
   };
   $('#pickImg').onchange=e=>{
@@ -199,14 +200,14 @@ function photo(){
       for(let seconds=3;seconds>0;seconds--){
         if(!document.body.contains(viewer)){stream?.getTracks().forEach(track=>track.stop());return}
         $('#countdown').textContent=seconds;$('#boothStatus').textContent=`Photo ${index+1} of 4 · get ready`;
-        await new Promise(resolve=>setTimeout(resolve,1000));
+        await new Promise(resolve=>gameTimeout(resolve,1000));
       }
       if(!document.body.contains(viewer))return;
       const image=stream?v:source,w=stream?v.videoWidth:source.naturalWidth,h=stream?v.videoHeight:source.naturalHeight;
       if(!w||!h)continue;
       cv.width=w;cv.height=h;ctx.save();ctx.filter='none';
       if(stream){ctx.translate(w,0);ctx.scale(-1,1)}ctx.drawImage(image,0,0,w,h);ctx.restore();
-      shots.push(cv.toDataURL('image/jpeg',.92));renderStrip();$('#countdown').textContent='✦';snd('click');await new Promise(resolve=>setTimeout(resolve,220));$('#countdown').textContent='';
+      shots.push(cv.toDataURL('image/jpeg',.92));renderStrip();$('#countdown').textContent='✦';snd('click');await new Promise(resolve=>gameTimeout(resolve,220));$('#countdown').textContent='';
     }
     busy=false;$('#startStrip').disabled=false;$('#boothStatus').textContent=shots.length===4?'Your strip is ready. Change the look or download it.':'Could not capture all four frames. Check the camera and try again.';
   };

@@ -48,6 +48,7 @@ function renderSide(){
   $('#side').querySelectorAll('.sb').forEach(b=>b.onclick=()=>{tab=b.dataset.t;playing=null;sel=null;render()});
 }
 function render(){
+  disposeGame();stopChat();stopRoomPolling();
   if(tab!=='online'){stopBooth();if(roomPoll){clearInterval(roomPoll);roomPoll=null}}
   document.body.classList.toggle('pl',!!playing);
   renderStats();renderSide();

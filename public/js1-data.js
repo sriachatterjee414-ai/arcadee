@@ -13,7 +13,7 @@ const GAMES=[
 {id:'g2048',n:'2048',e:'2️⃣',a:'2️⃣4️⃣8️⃣',t:'Puzzle',d:'Merge tiles, keep going as far as you like',h:'Reach the target tile for your level to win, but there is no cap. Tap Finish to save your score.'},
 {id:'word',n:'Word Guess',e:'🔤',a:'🔤',t:'Word',d:'5 letters, 6 tries',h:'Green is right spot, gold is wrong spot.'},
 {id:'m3',n:'Match 3',e:'🍬',a:'🍬🍓🍇',t:'Puzzle',d:'Collect candies, break the ice, beat the moves',h:'Swipe a candy toward a neighbour to swap. Match 3+. Hit the goal before moves run out. Ice from level 3; from level 4 matching 4 makes ⚡ (clears a row) and 5 makes 💣 (blast).'},
-{id:'jenga',n:'Jenga',e:'🧱',a:'',t:'Skill',d:'Pull blocks without toppling the tower',h:'Tap blocks to pull them. Thin layers are riskier. Each level needs more pulls.'},
+{id:'jenga',n:'Jenga',e:'🧱',a:'',t:'Skill',d:'Pull blocks without toppling the tower',h:'Tap blocks to pull them. Keep the centre support in thin layers. A lone edge support tips the tower. Each level needs more pulls.'},
 {id:'snl',n:'Snakes & Ladders',e:'🐍',a:'',t:'Luck',d:'Race to 100, climb ladders, avoid snakes',h:'Roll the dice. Ladders lift you up, snakes drag you down. 2-4 players, bots or friends. Higher levels add snakes.'},
 {id:'sudoku',n:'Sudoku',e:'🔢',a:'',t:'Brain',d:'Fill the grid, no repeats',h:'Every row, column and 3x3 box needs 1-9. Three mistakes end the game. Three hints per puzzle. Higher levels have fewer clues.'},
 {id:'mystery',n:'Whodunit',e:'🕵️',a:'',t:'Mystery',d:'Use the clues to find the killer',h:'Read the case file, reveal clues and accuse the killer. Fewer clues used means a higher score. Higher levels have more suspects.'},

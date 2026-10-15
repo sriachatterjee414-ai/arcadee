@@ -1,11 +1,37 @@
+/* Every run owns its callbacks. Leaving or replaying cancels the old run. */
+let gameScope=null;
+function disposeGame(){
+  if(!gameScope)return;
+  const scope=gameScope;gameScope=null;
+  scope.timers.forEach(clearTimeout);scope.intervals.forEach(clearInterval);scope.frames.forEach(cancelAnimationFrame);
+  scope.cleanups.forEach(cleanup=>cleanup());
+}
+function beginGame(){disposeGame();gameScope={timers:new Set(),intervals:new Set(),frames:new Set(),cleanups:[]}}
+function gameTimeout(callback,delay){
+  const scope=gameScope;if(!scope)return 0;
+  const id=setTimeout(()=>{scope.timers.delete(id);if(gameScope===scope)callback()},delay);scope.timers.add(id);return id;
+}
+function gameInterval(callback,delay){
+  const scope=gameScope;if(!scope)return 0;
+  const id=setInterval(()=>{if(gameScope===scope&&!document.hidden)callback()},delay);scope.intervals.add(id);return id;
+}
+function gameAnimation(callback){
+  const scope=gameScope;if(!scope)return 0;
+  const id=requestAnimationFrame(time=>{scope.frames.delete(id);if(gameScope===scope)callback(time)});scope.frames.add(id);return id;
+}
+function gameListen(target,event,callback,options){
+  target.addEventListener(event,callback,options);
+  gameScope?.cleanups.push(()=>target.removeEventListener(event,callback,options));
+}
+function gameCleanup(callback){gameScope?.cleanups.push(callback)}
 function fit(){
   document.querySelectorAll('#game canvas').forEach(c=>{c.style.height='auto';c.style.maxWidth='100%'});
 }
 addEventListener('resize',()=>{if(playing)fit()});
 function frame(g,inner){
   const G=GAMES.find(x=>x.id===g);
-  $('#view').innerHTML=`<section class="card game-panel"><div class="top"><b>${G.n}</b><b style="color:var(--acc2)">${G.tool?'':hasLevels(g)?'Level '+LV:'Best '+(st(g).best||0)}</b></div><div id="game">${inner}</div></section>`;
-  document.body.classList.add('pl');setTimeout(fit,0);
+  $('#view').innerHTML=`<section class="card game-panel" data-scene="${g}"><div class="top"><div class="play-label"><span class="play-icon" aria-hidden="true">${window.CutieArt?CutieArt.game(g):G.e}</span><div><b>${G.n}</b><small>${cozyCaption(g)}</small></div></div><b style="color:var(--acc2)">${G.tool?'':hasLevels(g)?'Level '+LV:'Best '+(st(g).best||0)}</b></div><div id="game">${inner}</div></section>`;
+  document.body.classList.add('pl');gameTimeout(fit,0);
   return $('#game');
 }
 let AC=null,muted=false;try{muted=localStorage.getItem('ah_mute')==='1'}catch(e){}
@@ -20,27 +46,28 @@ function snd(t){
 }
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled||b.id==='snd')return;snd(b.closest('#bd')?'move':'click')});
 function end(g,won,text,score=0,nr){
+  if(!gameScope)return;disposeGame();
   snd(won?'win':'lose');
   if(!nr)record(g,won,score);
   const el=$('#game');if(!el)return;
   const nx=hasLevels(g)&&won&&LV<MAX_LEVEL;
   el.innerHTML=`<div class="msg ${won?'win':'lose'}">${text}</div><div class="msg" style="font-size:15px">Score: ${score}${hasLevels(g)?' · Level '+LV:''}</div><p id="roundReward" role="status">Saving rewards…</p><div class="row"><button class="btn" id="again">🔁 Replay</button>${nx?'<button class="btn" id="nxt">Next level ➜</button>':''}<button class="btn ghost" id="ex">Exit</button></div>`;
-  if(!nr)saveQueue.then(()=>apiJson('/api/game/reward',{method:'POST',body:JSON.stringify({game:g})})).then(p=>{accountProfile=p;if(document.body.contains(el)&&$('#roundReward'))$('#roundReward').textContent=`+${p.gameReward} coins · Best ${st(g).best||0}`}).catch(e=>{if($('#roundReward'))$('#roundReward').textContent='Reward not saved: '+e.message});
+  if(!nr)saveQueue.then(()=>apiJson('/api/game/reward',{method:'POST',body:JSON.stringify({game:g})})).then(p=>{accountProfile=p;if(el.isConnected&&el.querySelector('#roundReward'))el.querySelector('#roundReward').textContent=`+${p.gameReward} coins · Best ${st(g).best||0}`}).catch(e=>{if(el.isConnected&&el.querySelector('#roundReward'))el.querySelector('#roundReward').textContent='Reward not saved: '+e.message});
   else if($('#roundReward'))$('#roundReward').remove();
   $('#again').textContent='Play again';
   $('#again').onclick=()=>startGame(g);
   if(nx)$('#nxt').onclick=()=>{LV++;startGame(g)};
   $('#ex').onclick=()=>{playing=null;render()};
 }
-function startGame(g){({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide,mines,c4,hangman,hilo,stroop})[g]()}
+function startGame(g){beginGame();({snake,ttt,rps,mem,react,guess,math,bird,g2048,word,m3,tiles,jenga,ludo,chess,bubble,beat,boba,fruit,golf,cat,sketch,race,cook,snl,sudoku,mystery,tetris,water,wordsearch,photo,simon,whack,slide,mines,c4,hangman,hilo,stroop})[g]()}
 
 /* Tic-Tac-Toe */
 function ttt(){
   let b=Array(9).fill(''),over=false;
   const L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
   const win=p=>L.some(l=>l.every(i=>b[i]===p));
-  const el=frame('ttt','<div class="board" id="bd"></div><div class="msg" id="m">Your move (X)</div>');
-  const draw=()=>{$('#bd').innerHTML=b.map((v,i)=>`<button class="cell" data-i="${i}" style="color:${v==='X'?'#e5484d':'#2b6cff'};border:3px solid var(--acc);background:var(--card);font-size:56px">${v}</button>`).join('');
+  const el=frame('ttt','<div class="board" id="bd"></div><div class="msg" id="m">Your move · hearts (X)</div>');
+  const draw=()=>{$('#bd').innerHTML=b.map((v,i)=>`<button class="cell" data-i="${i}" aria-label="Square ${i+1}, ${v==='X'?'your heart':v==='O'?'rival cloud':'empty'}" style="color:${v==='X'?'#e5484d':'#2b6cff'};border:3px solid var(--acc);background:var(--card);font-size:56px">${v?toyMark(v):''}</button>`).join('');
     $('#bd').querySelectorAll('.cell').forEach(c=>c.onclick=()=>move(+c.dataset.i))};
   const find=p=>{for(const l of L){const v=l.map(i=>b[i]);if(v.filter(x=>x===p).length===2&&v.includes('')){return l[v.indexOf('')]}}return -1};
   function fin(won,t){over=true;draw();end('ttt',won,t,won?100:/Draw/.test(t)?30:0)}
@@ -62,7 +89,7 @@ function ttt(){
 function rps(){
   let you=0,cpu=0;const K=1+Math.floor((LV-1)/10);const M=['🪨','📄','✂️'];
   frame('rps','<div class="msg" id="m">Pick one!</div><div class="row" id="ch"></div><div class="msg" id="sc">You 0 - 0 CPU</div>');
-  $('#ch').innerHTML=M.map((x,i)=>`<button class="big" data-i="${i}">${x}</button>`).join('');
+  $('#ch').innerHTML=M.map((x,i)=>`<button class="big toy-choice" data-i="${i}" aria-label="${['Rock','Paper','Scissors'][i]}">${toyChoice(i)}<small>${['Rock','Paper','Scissors'][i]}</small></button>`).join('');
   $('#ch').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const a=+b.dataset.i,c=Math.floor(Math.random()*3);
     let t=`${M[a]} vs ${M[c]}: `;
@@ -80,7 +107,7 @@ function mem(){
   frame('mem',`<div class="msg" id="m">Pairs ${pairCount} · Moves: 0 (win at ${ML} or fewer)</div><div class="mem" id="mg" style="grid-template-columns:repeat(${pairCount>10?6:4},1fr)"></div>`);
   const paint=()=>{$('#mg').innerHTML=cards.map((c,i)=>{const s=cards[i].d?'done':open.includes(i)?'up':'';return`<button class="mc ${s}" data-i="${i}">${s?c.e||c:'?'}</button>`}).join('')};
   const C=cards.map(e=>({e,d:false}));cards.length=0;C.forEach(c=>cards.push(c));
-  const paint2=()=>{$('#mg').innerHTML=cards.map((c,i)=>{const s=c.d?'done':open.includes(i)?'up':'';return`<button class="mc ${s}" data-i="${i}">${s?c.e:'?'}</button>`}).join('');
+  const paint2=()=>{$('#mg').innerHTML=cards.map((c,i)=>{const s=c.d?'done':open.includes(i)?'up':'';return`<button class="mc ${s}" data-i="${i}" aria-label="${s?c.e:'Hidden card '+(i+1)}">${s?c.e:toyMark('bud')}</button>`}).join('');
     $('#mg').querySelectorAll('.mc').forEach(b=>b.onclick=()=>flip(+b.dataset.i))};
   function flip(i){
     if(lock||cards[i].d||open.includes(i))return;
@@ -90,7 +117,7 @@ function mem(){
       const[a,b]=open;
       if(cards[a].e===cards[b].e){cards[a].d=cards[b].d=true;open=[];found++;paint2();
         if(found===pairCount)end('mem',moves<=ML,moves<=ML?`Cleared in ${moves} moves! 🎉`:`Cleared in ${moves} moves. Too slow for a win.`,Math.max(0,1000-moves*25))}
-      else{lock=true;setTimeout(()=>{open=[];lock=false;paint2()},700)}
+      else{lock=true;gameTimeout(()=>{open=[];lock=false;paint2()},700)}
     }
   }
   paint2();
@@ -100,8 +127,8 @@ function react(){
   let t0=0,timer=0,state='wait';const TH=Math.max(130,420-LV*9.5);
   frame('react','<button class="zone" id="z"></button>');
   const z=$('#z');
-  function arm(){state='wait';z.style.background='#e5484d';z.textContent='Wait for green...';
-    timer=setTimeout(()=>{state='go';z.style.background='#1fa971';z.textContent='TAP!';t0=performance.now()},1500+Math.random()*2500)}
+  function arm(){state='wait';z.style.background='color-mix(in srgb,#f3bacb 30%,var(--card))';z.innerHTML=scenePet('rabbit')+'<span>Shhh… wait for green</span>';
+    timer=gameTimeout(()=>{state='go';z.style.background='color-mix(in srgb,#9ed6b5 30%,var(--card))';z.innerHTML=scenePet('cat')+'<span>Green! Tap now!</span>';t0=performance.now()},1500+Math.random()*2500)}
   z.onclick=()=>{
     if(state==='wait'){clearTimeout(timer);end('react',false,'Too early! 🙈')}
     else if(state==='go'){const ms=Math.round(performance.now()-t0);state='done';end('react',ms<TH,ms<TH?`${ms} ms. Lightning! ⚡`:`${ms} ms. Need under ${TH}.`,Math.max(0,1000-ms))}
@@ -197,7 +224,7 @@ function chess2(pvp){
   const paint=()=>{
     const lm=sel>=0?legal(b,wt).filter(m=>m[0]===sel).map(m=>m[1]):[];
     $('#m').textContent=(inCheck(b,wt)?'Check! ':'')+(pvp?(wt?'White':'Black')+' to move':'Your move (white)');
-    $('#bd').innerHTML=b.map((c,i)=>{const w=c&&isW(c);return`<button data-i="${i}" style="aspect-ratio:1;border:0;padding:0;font-size:26px;line-height:1;background:${i===sel?'#ffd24d':lm.includes(i)?'#7fe3a0':((i>>3)+(i&7))%2?'#c0507f':'#ffd9e8'};color:${w?'#fff':'#2a0b1c'};text-shadow:${w?'0 0 3px #000,0 0 3px #000':'none'}">${c?G[c.toLowerCase()]:''}</button>`}).join('');
+    $('#bd').innerHTML=b.map((c,i)=>{const w=c&&isW(c);return`<button data-i="${i}" aria-label="${c?(w?'White ':'Black ')+({k:'king',q:'queen',r:'rook',b:'bishop',n:'knight',p:'pawn'})[c.toLowerCase()]:'Empty square'} ${String.fromCharCode(97+i%8)}${8-(i>>3)}" style="aspect-ratio:1;border:0;padding:0;font-size:26px;line-height:1;background:${i===sel?'#ffd24d':lm.includes(i)?'#7fe3a0':((i>>3)+(i&7))%2?'#c5b2d5':'#fff2df'};color:${w?'#fff':'#2a0b1c'};text-shadow:${w?'0 0 3px #000,0 0 3px #000':'none'}">${c?chessToy(c,G[c.toLowerCase()]):''}</button>`}).join('');
     $('#bd').querySelectorAll('button').forEach(x=>x.onclick=()=>tap(+x.dataset.i));
   };
   function chk(w){
@@ -218,7 +245,7 @@ function chess2(pvp){
     if(chk(wt))return;
     if(!pvp){
       busy=true;
-      setTimeout(()=>{
+      gameTimeout(()=>{
         if(!document.body.contains($('#bd')))return;
         const m=cpuPick(b);b=cmove(b,m[0],m[1]);wt=true;busy=false;paint();chk(true);
       },350);
